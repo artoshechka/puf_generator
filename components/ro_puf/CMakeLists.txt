@@ -1,5 +1,11 @@
-idf_component_register(
-    SRCS "src/ro_puf.cpp"
-    INCLUDE_DIRS "."
-    REQUIRES puf_core
-)
+if(ESP_PLATFORM)
+    idf_component_register(
+        SRCS "src/ro_puf.cpp"
+        INCLUDE_DIRS "."
+        REQUIRES puf_core
+    )
+else()
+    add_library(ro_puf src/ro_puf.cpp)
+    target_include_directories(ro_puf PUBLIC .)
+    target_link_libraries(ro_puf PUBLIC puf_core)
+endif()

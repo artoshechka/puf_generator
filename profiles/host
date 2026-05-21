@@ -1,0 +1,12 @@
+# Шаблон хост-профиля. Сгенерируй свой через:
+#   conan profile detect --name host
+# и скопируй содержимое сюда для воспроизводимости.
+
+[settings]
+os=Macos
+arch=x86_64
+compiler=apple-clang
+compiler.version=16
+compiler.libcxx=libc++
+compiler.cppstd=17
+build_type=Debug
