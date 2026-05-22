@@ -39,8 +39,7 @@ class MockPufGeneratorSequence final : public IPufGenerator
 {
    public:
     /// @param[in] sequence Vector of fingerprints yielded cyclically
-    explicit MockPufGeneratorSequence(std::vector<Fingerprint> sequence)
-        : sequence_(std::move(sequence)), idx_(0)
+    explicit MockPufGeneratorSequence(std::vector<Fingerprint> sequence) : sequence_(std::move(sequence)), idx_(0)
     {
     }
 

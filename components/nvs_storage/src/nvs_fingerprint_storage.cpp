@@ -67,8 +67,7 @@ void NvsFingerprintStorage::Delete()
     if (err == ESP_OK) nvs_commit(handle);
     nvs_close(handle);
 
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND)
-        throw std::runtime_error("nvs_erase_key failed");
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) throw std::runtime_error("nvs_erase_key failed");
 }
 
 }  // namespace puf

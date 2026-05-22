@@ -6,14 +6,13 @@
 ///   LOGS  — дамп накопленных логов и очистка буфера
 ///   DEL   — удалить кешированный отпечаток из NVS
 
-#include <sdkconfig.h>
-#include <cstdio>
-#include <cstring>
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <nvs_flash.h>
+#include <sdkconfig.h>
 
+#include <cstdio>
+#include <cstring>
 #include <esp32_puf_factory.hpp>
 #include <majority_voter.hpp>
 #include <nvs_fingerprint_storage.hpp>
@@ -60,8 +59,9 @@ extern "C" void app_main()
             printFingerprint(storage.Load());
         else
             printFingerprint(generateAndStore(storage));
+    } catch (...)
+    {
     }
-    catch (...) {}
 
     char line[32];
     size_t pos = 0;
@@ -79,21 +79,26 @@ extern "C" void app_main()
             line[pos] = '\0';
             if (strcmp(line, "PUF") == 0)
             {
-                try { printFingerprint(generateAndStore(storage)); }
-                catch (...) {}
-            }
-            else if (strcmp(line, "LOGS") == 0)
+                try
+                {
+                    printFingerprint(generateAndStore(storage));
+                } catch (...)
+                {
+                }
+            } else if (strcmp(line, "LOGS") == 0)
             {
                 puf::LogDump();
-            }
-            else if (strcmp(line, "DEL") == 0)
+            } else if (strcmp(line, "DEL") == 0)
             {
-                try { storage.Delete(); }
-                catch (...) {}
+                try
+                {
+                    storage.Delete();
+                } catch (...)
+                {
+                }
             }
             pos = 0;
-        }
-        else if (pos < sizeof(line) - 1)
+        } else if (pos < sizeof(line) - 1)
         {
             line[pos++] = static_cast<char>(c);
         }

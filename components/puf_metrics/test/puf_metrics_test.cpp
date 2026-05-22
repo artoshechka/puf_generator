@@ -6,6 +6,7 @@
 #define GUID_3A7F1C9E_B842_4D5F_A610_E98C2D047F31
 
 #include <gtest/gtest.h>
+
 #include <puf_metrics.hpp>
 
 using puf::Fingerprint;

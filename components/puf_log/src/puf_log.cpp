@@ -1,15 +1,14 @@
 /// @file puf_log.cpp
 /// @brief Кольцевой буфер логов с перехватом через esp_log_set_vprintf.
 
-#include <puf_log.hpp>
+#include <esp_log.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-
-#include <esp_log.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
+#include <puf_log.hpp>
 
 namespace puf
 {
@@ -18,8 +17,8 @@ namespace
 {
 
 char gBuf[kLogBufferSize];
-size_t gHead = 0;   ///< индекс следующей записи (кольцо)
-size_t gUsed = 0;   ///< байт занято (≤ kLogBufferSize)
+size_t gHead = 0;  ///< индекс следующей записи (кольцо)
+size_t gUsed = 0;  ///< байт занято (≤ kLogBufferSize)
 SemaphoreHandle_t gMutex = nullptr;
 
 vprintf_like_t gOrigVprintf = nullptr;  ///< оригинальный обработчик ESP_LOG
@@ -36,8 +35,7 @@ void ringAppend(const char* s, size_t len)
         if (gUsed < kLogBufferSize)
         {
             ++gUsed;
-        }
-        else
+        } else
         {
             // Буфер полон — сдвигаем голову, затирая самую старую запись.
             gHead = (gHead + 1) % kLogBufferSize;
@@ -57,12 +55,10 @@ int pufVprintf(const char* fmt, va_list args)
 
     char tmp[256];
     int n = vsnprintf(tmp, sizeof(tmp), fmt, args);
-    if (n > 0)
-        ringAppend(tmp, static_cast<size_t>(n));
+    if (n > 0) ringAppend(tmp, static_cast<size_t>(n));
 
     // Продолжаем выводить в UART чтобы монитор работал как обычно.
-    if (gOrigVprintf)
-        gOrigVprintf(fmt, copy);
+    if (gOrigVprintf) gOrigVprintf(fmt, copy);
 
     va_end(copy);
     return n;
@@ -92,8 +88,7 @@ void LogDump()
     if (gUsed <= first)
     {
         fwrite(gBuf + gHead, 1, gUsed, stdout);
-    }
-    else
+    } else
     {
         fwrite(gBuf + gHead, 1, first, stdout);
         fwrite(gBuf, 1, gUsed - first, stdout);
