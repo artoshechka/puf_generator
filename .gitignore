@@ -17,3 +17,6 @@ sdkconfig*
 # Go build output
 server/puf-server
 server/puf-server.exe
+
+# Local environment overrides
+.env
