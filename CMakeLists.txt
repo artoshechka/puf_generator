@@ -14,6 +14,10 @@ else()
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     enable_testing()
 
+    include(cmake/ctest_cmake.txt)
+
     add_subdirectory(components/puf_core)
     add_subdirectory(components/ro_puf)
+    add_subdirectory(components/puf_postprocess)
+    add_subdirectory(components/puf_metrics)
 endif()
