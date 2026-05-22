@@ -13,3 +13,7 @@ docs/
 
 # ESP-IDF generated configs
 sdkconfig*
+
+# Go build output
+server/puf-server
+server/puf-server.exe

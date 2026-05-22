@@ -196,10 +196,17 @@ puf_generator/
 │       ├── puf_metrics.hpp
 │       ├── CMakeLists.txt
 │       └── src/puf_metrics.cpp
-└── main/
-    ├── main.cpp
-    ├── Kconfig.projbuild
-    └── CMakeLists.txt
+├── main/
+│   ├── main.cpp
+│   ├── Kconfig.projbuild
+│   └── CMakeLists.txt
+└── server/                        # Go-сервер верификации
+    ├── go.mod
+    ├── main.go
+    ├── config.go
+    ├── puf.go
+    ├── store.go
+    └── handler.go
 ```
 
 ---
@@ -348,6 +355,62 @@ const bool ok = auth.Authenticate(fp);
 2. `RoPuf::Generate()` запускает каждый осциллятор на `windowCycles` тактов.
 3. Для каждой пары `(i, j)`: `counts[i] > counts[j]` → бит `1`, иначе `0`.
 4. Результат — `ceil(bits/8)` байт, уникальных для данного экземпляра чипа.
+
+---
+
+## Сервер верификации (`server/`)
+
+Go-сервер для регистрации устройств и верификации их PUF-отпечатков по расстоянию Хэмминга.
+
+### Требования
+
+- Go 1.22+
+- PostgreSQL 14+
+
+### Запуск
+
+```bash
+cd server
+DATABASE_URL=postgres://user:pass@localhost/pufdb \
+ADMIN_TOKEN=secret \
+PUF_THRESHOLD_PCT=10.0 \
+go run .
+```
+
+| Переменная окружения | По умолчанию | Описание |
+|---|---|---|
+| `DATABASE_URL` | — (обязательная) | DSN PostgreSQL |
+| `LISTEN_ADDR` | `:8080` | Адрес и порт сервера |
+| `ADMIN_TOKEN` | — | Bearer-токен для админ-операций; если пустой — без защиты |
+| `PUF_THRESHOLD_PCT` | `10.0` | Максимальный допустимый intra-HD в процентах |
+
+### REST API
+
+```
+# Регистрация устройства (admin)
+POST /devices/{id}/enroll
+Authorization: Bearer <ADMIN_TOKEN>
+{"fingerprint": "a1b2c3..."}
+
+# Верификация устройства по PUF-отпечатку
+POST /devices/{id}/verify
+Authorization: PUF <hex-fingerprint>
+→ {"ok": true, "hamming_pct": 4.2, "threshold_pct": 10.0}
+
+# Список устройств (admin)
+GET /devices
+Authorization: Bearer <ADMIN_TOKEN>
+
+# Удаление устройства (admin)
+DELETE /devices/{id}
+Authorization: Bearer <ADMIN_TOKEN>
+```
+
+### Механизм аутентификации
+
+Устройство передаёт свежий PUF-отпечаток в заголовке `Authorization: PUF <hex>`.
+Сервер вычисляет расстояние Хэмминга между переданным и эталонным отпечатком.
+Если дробное HD (в процентах) не превышает `PUF_THRESHOLD_PCT` — устройство считается подлинным.
 
 ---
 
