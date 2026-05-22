@@ -6,6 +6,7 @@
 #define GUID_F712E89C_625A_4C4E_AC3B_29B337659DF0
 
 #include <i_authenticator.hpp>
+#include <puf_auth_config.hpp>
 
 namespace puf
 {
@@ -18,7 +19,7 @@ class HammingAuthenticator final : public IAuthenticator
    public:
     /// @param[in] reference    Эталонный отпечаток (зарегистрированный)
     /// @param[in] thresholdPct Максимально допустимый intra-HD в процентах [0..100]
-    HammingAuthenticator(Fingerprint reference, double thresholdPct = 10.0);
+    HammingAuthenticator(Fingerprint reference, double thresholdPct = kDefaultThresholdPct);
 
     /// @brief Сравнивает candidate с эталоном по расстоянию Хэмминга
     /// @param[in] candidate Отпечаток, предъявленный при аутентификации

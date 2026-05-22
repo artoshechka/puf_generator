@@ -1,3 +1,5 @@
 build/
 .vscode/
+.PVS-Studio/
+
 .DS_Store

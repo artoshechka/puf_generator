@@ -7,6 +7,7 @@
 
 #include <i_puf_generator.hpp>
 #include <memory>
+#include <puf_postprocess_config.hpp>
 
 namespace puf
 {
@@ -20,7 +21,7 @@ class MajorityVoter final : public IPufGenerator
    public:
     /// @param[in] inner  Исходный генератор (владение передаётся)
     /// @param[in] rounds Число измерений (нечётное для однозначного большинства)
-    MajorityVoter(std::unique_ptr<IPufGenerator> inner, size_t rounds = 3);
+    MajorityVoter(std::unique_ptr<IPufGenerator> inner, size_t rounds = kDefaultMajorityRounds);
 
     /// @brief Снимает rounds_ измерений и возвращает побитовое большинство
     /// @return Стабилизированный отпечаток той же длины, что inner_
