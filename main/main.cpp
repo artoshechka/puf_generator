@@ -20,17 +20,23 @@
 #include <puf_log.hpp>
 #include <ro_oscillator.hpp>
 
-static constexpr size_t kRawRuns = 3;
-static constexpr size_t kOscCount = puf::RoOscillator::kMaxIndex + 1;
-
-static void printFingerprint(const puf::Fingerprint& fp)
+namespace
 {
-    for (const uint8_t byte : fp) printf("%02x", byte);
+
+constexpr size_t kRawRuns = 3U;
+constexpr size_t kOscCount = puf::RoOscillator::kMaxIndex + 1U;
+
+void printFingerprint(const puf::Fingerprint& fp)
+{
+    for (const uint8_t byte : fp)
+    {
+        printf("%02x", byte);
+    }
     printf("\n");
-    fflush(stdout);
+    (void)fflush(stdout);
 }
 
-static puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
+puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
 {
     puf::Esp32PufFactory factory;
     auto raw = factory.CreateRoPuf(CONFIG_PUF_FINGERPRINT_BITS);
@@ -41,20 +47,17 @@ static puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
     return fp;
 }
 
-static void printRawCounts()
+void printRawCounts()
 {
     puf::RoOscillator oscs[kOscCount] = {
-        puf::RoOscillator(0),  puf::RoOscillator(1),  puf::RoOscillator(2),
-        puf::RoOscillator(3),  puf::RoOscillator(4),  puf::RoOscillator(5),
-        puf::RoOscillator(6),  puf::RoOscillator(7),  puf::RoOscillator(8),
-        puf::RoOscillator(9),  puf::RoOscillator(10), puf::RoOscillator(11),
-        puf::RoOscillator(12), puf::RoOscillator(13), puf::RoOscillator(14),
-        puf::RoOscillator(15), puf::RoOscillator(16), puf::RoOscillator(17),
-        puf::RoOscillator(18), puf::RoOscillator(19), puf::RoOscillator(20),
-        puf::RoOscillator(21), puf::RoOscillator(22), puf::RoOscillator(23),
-        puf::RoOscillator(24), puf::RoOscillator(25), puf::RoOscillator(26),
-        puf::RoOscillator(27), puf::RoOscillator(28), puf::RoOscillator(29),
-        puf::RoOscillator(30), puf::RoOscillator(31),
+        puf::RoOscillator(0U),  puf::RoOscillator(1U),  puf::RoOscillator(2U),  puf::RoOscillator(3U),
+        puf::RoOscillator(4U),  puf::RoOscillator(5U),  puf::RoOscillator(6U),  puf::RoOscillator(7U),
+        puf::RoOscillator(8U),  puf::RoOscillator(9U),  puf::RoOscillator(10U), puf::RoOscillator(11U),
+        puf::RoOscillator(12U), puf::RoOscillator(13U), puf::RoOscillator(14U), puf::RoOscillator(15U),
+        puf::RoOscillator(16U), puf::RoOscillator(17U), puf::RoOscillator(18U), puf::RoOscillator(19U),
+        puf::RoOscillator(20U), puf::RoOscillator(21U), puf::RoOscillator(22U), puf::RoOscillator(23U),
+        puf::RoOscillator(24U), puf::RoOscillator(25U), puf::RoOscillator(26U), puf::RoOscillator(27U),
+        puf::RoOscillator(28U), puf::RoOscillator(29U), puf::RoOscillator(30U), puf::RoOscillator(31U),
     };
 
     printf("RAW_BEGIN window=%u\n", static_cast<unsigned>(CONFIG_PUF_WINDOW_CYCLES));
@@ -68,18 +71,20 @@ static void printRawCounts()
         printf("\n");
     }
     printf("RAW_END\n");
-    fflush(stdout);
+    (void)fflush(stdout);
 }
 
-static void initNvs()
+void initNvs()
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
-        nvs_flash_erase();
-        nvs_flash_init();
+        (void)nvs_flash_erase();
+        (void)nvs_flash_init();
     }
 }
+
+}  // namespace
 
 extern "C" void app_main()
 {
@@ -91,11 +96,16 @@ extern "C" void app_main()
     try
     {
         if (storage.HasFingerprint())
+        {
             printFingerprint(storage.Load());
-        else
+        } else
+        {
             printFingerprint(generateAndStore(storage));
+        }
+    } catch (...)
+    {
+        // NVS failure must not crash the device; boot continues without fingerprint output.
     }
-    catch (...) {}
 
     char line[32];
     size_t pos = 0;
@@ -113,27 +123,40 @@ extern "C" void app_main()
             line[pos] = '\0';
             if (strcmp(line, "PUF") == 0)
             {
-                try { printFingerprint(generateAndStore(storage)); }
-                catch (...) {}
-            }
-            else if (strcmp(line, "LOGS") == 0)
+                try
+                {
+                    printFingerprint(generateAndStore(storage));
+                } catch (...)
+                {
+                    // NVS store failure: fingerprint not cached but was generated.
+                }
+            } else if (strcmp(line, "LOGS") == 0)
             {
                 puf::LogDump();
-            }
-            else if (strcmp(line, "DEL") == 0)
+            } else if (strcmp(line, "DEL") == 0)
             {
-                try { storage.Delete(); }
-                catch (...) {}
-            }
-            else if (strcmp(line, "RAW") == 0)
+                try
+                {
+                    storage.Delete();
+                } catch (...)
+                {
+                    // NVS delete failure: non-fatal.
+                }
+            } else if (strcmp(line, "RAW") == 0)
             {
                 printRawCounts();
+            } else
+            {
+                // Unknown command — ignore.
             }
             pos = 0;
-        }
-        else if (pos < sizeof(line) - 1)
+        } else if (pos < sizeof(line) - 1U)
         {
-            line[pos++] = static_cast<char>(c);
+            line[pos] = static_cast<char>(c);
+            ++pos;
+        } else
+        {
+            // Line too long — ignore overflow character.
         }
     }
 }

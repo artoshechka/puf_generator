@@ -21,25 +21,25 @@ size_t MajorityVoter::FingerprintBits() const
 Fingerprint MajorityVoter::Generate()
 {
     const size_t bits = inner_->FingerprintBits();
-    const size_t bytes = (bits + 7) / 8;
+    const size_t bytes = (bits + 7U) / 8U;
 
-    std::vector<size_t> votes(bits, 0);
+    std::vector<size_t> votes(bits, 0U);
 
     for (size_t r = 0; r < rounds_; ++r)
     {
         const Fingerprint sample = inner_->Generate();
         for (size_t i = 0; i < bits; ++i)
         {
-            votes[i] += (sample[i / 8] >> (i % 8)) & 1u;
+            votes[i] += (sample[i / 8U] >> (i % 8U)) & 1U;
         }
     }
 
-    Fingerprint result(bytes, 0);
+    Fingerprint result(bytes, 0U);
     for (size_t i = 0; i < bits; ++i)
     {
-        if (votes[i] > rounds_ / 2)
+        if (votes[i] > rounds_ / 2U)
         {
-            result[i / 8] |= static_cast<uint8_t>(1u << (i % 8));
+            result[i / 8U] |= static_cast<uint8_t>(1U << (i % 8U));
         }
     }
 

@@ -14,11 +14,13 @@ namespace puf
 namespace
 {
 
-/// @brief Minimum number of oscillators required to produce at least bits pairs
 size_t RequiredOscillators(size_t bits)
 {
     size_t n = 2;
-    while ((n * (n - 1) / 2) < bits) ++n;
+    while ((n * (n - 1U) / 2U) < bits)
+    {
+        ++n;
+    }
     return n;
 }
 
@@ -28,7 +30,7 @@ std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateRoPuf(size_t bits)
 {
     const size_t oscCount = RequiredOscillators(bits);
 
-    if (oscCount > RoOscillator::kMaxIndex + 1)
+    if (oscCount > RoOscillator::kMaxIndex + 1U)
     {
         throw std::invalid_argument("requested bits exceed oscillator capacity");
     }
@@ -37,7 +39,7 @@ std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateRoPuf(size_t bits)
     oscs.reserve(oscCount);
     for (size_t i = 0; i < oscCount; ++i)
     {
-        oscs.emplace_back(std::make_unique<RoOscillator>(i));
+        (void)oscs.emplace_back(std::make_unique<RoOscillator>(i));
     }
 
 #ifdef CONFIG_PUF_WINDOW_CYCLES
