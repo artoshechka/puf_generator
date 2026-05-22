@@ -1,0 +1,33 @@
+# Doxyfile for puf_generator
+# Generated configuration for HTML documentation
+
+PROJECT_NAME           = "puf_generator"
+PROJECT_BRIEF          = "Аппаратный идентификатор на основе Ring Oscillator PUF для ESP32"
+PROJECT_NUMBER         = 1.0.0
+
+OUTPUT_DIRECTORY       = docs
+OUTPUT_LANGUAGE        = Russian
+
+INPUT                  = components main
+RECURSIVE              = YES
+FILE_PATTERNS          = *.hpp *.cpp
+EXCLUDE_PATTERNS       = */test/*
+
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+
+QUIET                  = YES
+WARNINGS               = YES
+WARN_NO_PARAMDOC       = YES
+
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+SORT_MEMBER_DOCS       = NO
+
+HAVE_DOT               = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
