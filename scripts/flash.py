@@ -34,9 +34,12 @@ def ensure_idf() -> None:
             f"https://github.com/espressif/esp-idf.git {IDF_PATH}"
         )
 
-    venv = os.path.expanduser("~/.espressif/python_env")
-    if not os.path.isdir(venv):
-        print("Running ESP-IDF installer ...")
+    check = subprocess.run(
+        f". {EXPORT_SH} > /dev/null 2>&1",
+        shell=True, executable="/bin/bash"
+    )
+    if check.returncode != 0:
+        print("ESP-IDF environment broken or missing, running installer ...")
         run(f"{IDF_PATH}/install.sh esp32")
 
 
