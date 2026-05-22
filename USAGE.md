@@ -30,21 +30,41 @@ The server is now running at `http://localhost:8080`.
 
 ## 2. Flash the board and read the fingerprint
 
+First flash the firmware (done once):
+
 ```bash
-python3 scripts/flash.py
+python3 scripts/flash.py --build-only   # build
+python3 scripts/flash.py                # build + flash + open monitor
 ```
 
-The script installs ESP-IDF automatically on first run, builds the firmware, flashes the board, and opens the serial monitor.
+The script installs ESP-IDF automatically on first run.
 
-You will see a single hex line printed — that is the PUF fingerprint of this specific chip:
+**To capture the fingerprint automatically** use `read_puf.py`. It resets the board, waits for the hex output, and prints only the fingerprint to stdout:
+
+```bash
+pip install pyserial          # one-time dependency
+
+python3 scripts/read_puf.py   # auto-detect port
+```
+
+Output (stderr shows status, stdout is clean for piping):
 
 ```
+Opening /dev/cu.usbmodem101 at 115200 baud ...
+Waiting for fingerprint (timeout 15s) ...
+  skip: ESP-ROM:esp32s3-20210327
+  skip: Build:Mar 27 2021
+  [1/1] captured 256-bit fingerprint
 a3f1c8b2e04d7a91f5630be28c1d4f67a9e2b05c3d8f1a74e6c2901b5d7e8f3
 ```
 
-Copy it. Every power cycle will produce a slightly different value — that is expected (intra-device noise). The server tolerates up to 10% bit difference by default.
+Capture into a variable for direct use in curl:
 
-Press `Ctrl+]` to exit the monitor.
+```bash
+PUF=$(python3 scripts/read_puf.py)
+```
+
+Every power cycle produces a slightly different value — that is expected (intra-device noise). The server tolerates up to 10% bit difference by default.
 
 ---
 
@@ -53,10 +73,12 @@ Press `Ctrl+]` to exit the monitor.
 Run this once — during manufacturing or first setup. Replace `esp32-001` with any unique ID for your device.
 
 ```bash
+PUF=$(python3 scripts/read_puf.py)
+
 curl -X POST http://localhost:8080/devices/esp32-001/enroll \
   -H "Authorization: Bearer secret" \
   -H "Content-Type: application/json" \
-  -d '{"fingerprint": "a3f1c8b2e04d7a91f5630be28c1d4f67a9e2b05c3d8f1a74e6c2901b5d7e8f3"}'
+  -d "{\"fingerprint\": \"$PUF\"}"
 ```
 
 Expected response:
@@ -71,11 +93,13 @@ The fingerprint is stored in PostgreSQL as the reference for this device.
 
 ## 4. Verify the device
 
-Power-cycle the board, read the new fingerprint from the monitor (step 2), then send it to the server:
+Power-cycle the board to get a fresh fingerprint, then verify against the enrolled reference:
 
 ```bash
+PUF=$(python3 scripts/read_puf.py)
+
 curl -X POST http://localhost:8080/devices/esp32-001/verify \
-  -H "Authorization: PUF a3f1c8b2e04d7a91f5630be28c1d4f67..."
+  -H "Authorization: PUF $PUF"
 ```
 
 **Verified** — the fingerprint is close enough to the reference:
