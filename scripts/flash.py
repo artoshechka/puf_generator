@@ -6,13 +6,14 @@ import glob
 import os
 import subprocess
 import sys
+from typing import Optional
 
 IDF_PATH = os.path.expanduser("~/esp/esp-idf")
 IDF_TAG = "v5.4.1"
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def run(cmd: str, env: dict | None = None) -> None:
+def run(cmd: str, env: Optional[dict] = None) -> None:
     result = subprocess.run(cmd, shell=True, env=env)
     if result.returncode != 0:
         sys.exit(result.returncode)

@@ -233,10 +233,12 @@ git clone --recursive --depth 1 --branch v5.4.1 https://github.com/espressif/esp
 cd ~/esp/esp-idf && ./install.sh esp32
 ```
 
+> `install.sh` must be run before `export.sh`. Re-run it after any ESP-IDF update or if `export.sh` reports missing Python dependencies.
+
 #### Прошивка
 
 ```bash
-# Активировать окружение
+# Activate environment (required in every new terminal)
 . ~/esp/esp-idf/export.sh
 
 idf.py set-target esp32
@@ -244,6 +246,21 @@ idf.py set-target esp32
 # Linux: /dev/ttyUSB0, macOS: /dev/cu.usbmodem101
 idf.py -p /dev/cu.usbmodem101 flash monitor
 ```
+
+#### Автоматизация (scripts/flash.py)
+
+```bash
+# Auto-detect port, install IDF if missing, build and flash
+python3 scripts/flash.py
+
+# Explicit port
+python3 scripts/flash.py --port /dev/cu.usbmodem101
+
+# Build only
+python3 scripts/flash.py --build-only
+```
+
+> Requires Python 3.9+. The script clones and installs ESP-IDF automatically on first run.
 
 ### Конфигурация (menuconfig)
 
