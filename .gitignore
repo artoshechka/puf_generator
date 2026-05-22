@@ -10,3 +10,7 @@ build_host/
 
 # Doxygen output
 docs/
+
+# ESP-IDF generated configs
+sdkconfig
+sdkconfig.defaults

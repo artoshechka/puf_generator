@@ -36,6 +36,7 @@ def build_env(venv: str) -> dict:
     idf_tools_bin = os.path.join(IDF_PATH, "tools")
     esp_tools = os.path.join(ESPRESSIF_DIR, "tools")
     xtensa_bins = glob.glob(os.path.join(esp_tools, "xtensa-esp-elf", "*", "xtensa-esp-elf", "bin"))
+    xtensa_bins += glob.glob(os.path.join(esp_tools, "riscv32-esp-elf", "*", "riscv32-esp-elf", "bin"))
     rom_elfs = glob.glob(os.path.join(esp_tools, "esp-rom-elfs", "*"))
     if rom_elfs:
         env["ESP_ROM_ELF_DIR"] = rom_elfs[0]
@@ -83,7 +84,7 @@ def main() -> None:
     ensure_idf()
 
     os.chdir(PROJECT_ROOT)
-    idf("set-target esp32")
+    idf("set-target esp32c3")
 
     if args.build_only:
         idf("build")
