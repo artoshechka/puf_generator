@@ -362,12 +362,49 @@ const bool ok = auth.Authenticate(fp);
 
 Go-сервер для регистрации устройств и верификации их PUF-отпечатков по расстоянию Хэмминга.
 
-### Требования
+### Быстрый старт (Docker)
+
+```bash
+# Собрать и запустить сервер + PostgreSQL одной командой
+ADMIN_TOKEN=secret docker compose up --build
+```
+
+Сервер доступен на `http://localhost:8080`.  
+Данные PostgreSQL сохраняются в Docker volume `pgdata` между перезапусками.
+
+Переменные окружения можно переопределить через `.env` в корне:
+
+```bash
+# .env
+ADMIN_TOKEN=my-secret-token
+PUF_THRESHOLD_PCT=8.0
+```
+
+#### Как это работает
+
+```
+┌─────────────────────────────────────┐
+│         docker compose up           │
+│                                     │
+│  ┌──────────────┐  ┌─────────────┐  │
+│  │   postgres   │  │   server    │  │
+│  │  (healthck)  │──│  (Go bin)   │  │
+│  └──────────────┘  └─────────────┘  │
+│         pgdata volume               │
+└─────────────────────────────────────┘
+```
+
+1. `postgres` стартует первым; сервер ждёт `pg_isready` (healthcheck).
+2. `server` собирается двухэтапным Dockerfile: Go-тулчейн только в build-стадии, финальный образ — `scratch` (~5 МБ).
+3. При старте сервер выполняет `CREATE TABLE IF NOT EXISTS devices` — миграция накатывается автоматически.
+4. `pgdata` volume переживает `docker compose down`; для полной очистки: `docker compose down -v`.
+
+### Ручной запуск (без Docker)
+
+#### Требования
 
 - Go 1.22+
 - PostgreSQL 14+
-
-### Запуск
 
 ```bash
 cd server
