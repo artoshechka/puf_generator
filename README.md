@@ -226,13 +226,23 @@ doxygen Doxyfile
 
 ### ESP32
 
+#### Установка ESP-IDF
+
 ```bash
-# Активировать ESP-IDF окружение
+git clone --recursive --depth 1 --branch v5.4.1 https://github.com/espressif/esp-idf.git ~/esp/esp-idf
+cd ~/esp/esp-idf && ./install.sh esp32
+```
+
+#### Прошивка
+
+```bash
+# Активировать окружение
 . ~/esp/esp-idf/export.sh
 
 idf.py set-target esp32
-idf.py build
-idf.py -p /dev/ttyUSB0 flash monitor
+
+# Linux: /dev/ttyUSB0, macOS: /dev/cu.usbmodem101
+idf.py -p /dev/cu.usbmodem101 flash monitor
 ```
 
 ### Конфигурация (menuconfig)

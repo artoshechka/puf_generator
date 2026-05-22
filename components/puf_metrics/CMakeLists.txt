@@ -8,6 +8,7 @@ else()
     add_library(puf_metrics src/puf_metrics.cpp)
     target_include_directories(puf_metrics PUBLIC .)
     target_link_libraries(puf_metrics PUBLIC puf_core)
+    target_compile_features(puf_metrics PUBLIC cxx_std_20)
 
     puf_add_test(
         TARGET      puf_metrics_test
