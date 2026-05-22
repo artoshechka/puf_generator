@@ -7,23 +7,32 @@
 
 #include <i_fingerprint_storage.hpp>
 
-namespace puf {
+namespace puf
+{
 
 /// @brief Сохраняет и загружает отпечаток через ESP-IDF NVS API.
-///
 /// Использует пространство имён "puf" и ключ "fingerprint".
 /// Перед первым использованием необходимо инициализировать NVS: nvs_flash_init().
-class NvsFingerprintStorage final : public IFingerprintStorage {
-public:
+class NvsFingerprintStorage final : public IFingerprintStorage
+{
+   public:
+    /// @brief Сохраняет отпечаток в NVS, перезаписывая предыдущее значение
+    /// @param fp Отпечаток для записи
     void Store(const Fingerprint& fp) override;
+
+    /// @brief Загружает отпечаток из NVS
+    /// @return Ранее сохранённый отпечаток
+    /// @throws std::runtime_error если ключ не найден или NVS недоступен
     Fingerprint Load() override;
+
+    /// @return true если ключ "fingerprint" присутствует в NVS-пространстве "puf"
     bool HasFingerprint() const override;
 
-private:
-    static constexpr const char* kNvsNamespace = "puf";
-    static constexpr const char* kNvsKey       = "fingerprint";
+   private:
+    static constexpr const char* kNvsNamespace = "puf";    ///< NVS-пространство имён
+    static constexpr const char* kNvsKey = "fingerprint";  ///< Ключ хранения отпечатка
 };
 
-} // namespace puf
+}  // namespace puf
 
-#endif // GUID_BF695C74_4626_4E5A_8831_62DB13E155CB
+#endif  // GUID_BF695C74_4626_4E5A_8831_62DB13E155CB

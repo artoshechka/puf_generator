@@ -2,19 +2,19 @@
 /// @author Artemenko Anton
 /// @brief Модульные тесты для RoPuf
 
+#include <gtest/gtest.h>
+
 #include <mock_oscillator.hpp>
 #include <ro_puf.hpp>
-
-#include <gtest/gtest.h>
 
 using namespace puf;
 using namespace puf::test;
 
-static std::vector<std::unique_ptr<IOscillator>> MakeOscillators(
-    std::initializer_list<uint32_t> counts)
+static std::vector<std::unique_ptr<IOscillator>> MakeOscillators(std::initializer_list<uint32_t> counts)
 {
     std::vector<std::unique_ptr<IOscillator>> oscs;
-    for (uint32_t c : counts) {
+    for (uint32_t c : counts)
+    {
         oscs.emplace_back(std::make_unique<MockOscillator>(c));
     }
     return oscs;

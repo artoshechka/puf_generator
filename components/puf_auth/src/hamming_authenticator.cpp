@@ -2,19 +2,19 @@
 /// @author Artemenko Anton
 /// @brief Реализация аутентификатора на основе расстояния Хэмминга
 
-#include <hamming_authenticator.hpp>
-
 #include <algorithm>
 #include <bit>
+#include <hamming_authenticator.hpp>
 #include <stdexcept>
 
-namespace puf {
+namespace puf
+{
 
 HammingAuthenticator::HammingAuthenticator(Fingerprint reference, double thresholdPct)
-    : reference_(std::move(reference))
-    , thresholdPct_(thresholdPct)
+    : reference_(std::move(reference)), thresholdPct_(thresholdPct)
 {
-    if (thresholdPct < 0.0 || thresholdPct > 100.0) {
+    if (thresholdPct < 0.0 || thresholdPct > 100.0)
+    {
         throw std::invalid_argument("thresholdPct must be in [0, 100]");
     }
 }
@@ -23,7 +23,8 @@ size_t HammingAuthenticator::HammingDistance(const Fingerprint& a, const Fingerp
 {
     size_t dist = 0;
     const size_t len = std::min(a.size(), b.size());
-    for (size_t i = 0; i < len; ++i) {
+    for (size_t i = 0; i < len; ++i)
+    {
         dist += static_cast<size_t>(std::popcount(static_cast<uint8_t>(a[i] ^ b[i])));
     }
     return dist;
@@ -42,4 +43,4 @@ bool HammingAuthenticator::Authenticate(const Fingerprint& candidate)
     return hd <= thresholdPct_;
 }
 
-} // namespace puf
+}  // namespace puf

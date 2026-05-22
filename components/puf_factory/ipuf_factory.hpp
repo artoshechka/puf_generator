@@ -5,23 +5,24 @@
 #ifndef GUID_44869DE5_11BC_4BC6_ACB6_F935000C3080
 #define GUID_44869DE5_11BC_4BC6_ACB6_F935000C3080
 
-#include <i_puf_generator.hpp>
-
 #include <cstddef>
+#include <i_puf_generator.hpp>
 #include <memory>
 
-namespace puf {
+namespace puf
+{
 
 /// @brief Фабрика генераторов PUF для конкретной платформы
-class IPufFactory {
-public:
+class IPufFactory
+{
+   public:
     virtual ~IPufFactory() = default;
 
     /// @brief Создаёт Ring Oscillator PUF
-    /// @param bits Длина отпечатка в битах
+    /// @param[in] bits Длина отпечатка в битах
     virtual std::unique_ptr<IPufGenerator> CreateRoPuf(size_t bits) = 0;
 };
 
-} // namespace puf
+}  // namespace puf
 
-#endif // GUID_44869DE5_11BC_4BC6_ACB6_F935000C3080
+#endif  // GUID_44869DE5_11BC_4BC6_ACB6_F935000C3080

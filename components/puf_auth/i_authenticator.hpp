@@ -7,19 +7,21 @@
 
 #include <fingerprint.hpp>
 
-namespace puf {
+namespace puf
+{
 
 /// @brief Верификатор отпечатка устройства по эталонному значению
-class IAuthenticator {
-public:
+class IAuthenticator
+{
+   public:
     virtual ~IAuthenticator() = default;
 
     /// @brief Проверяет подлинность устройства по предъявленному отпечатку
-    /// @param candidate Отпечаток, полученный при аутентификации
+    /// @param[in] candidate Отпечаток, полученный при аутентификации
     /// @return true если отпечаток соответствует эталону в пределах порога
     virtual bool Authenticate(const Fingerprint& candidate) = 0;
 };
 
-} // namespace puf
+}  // namespace puf
 
-#endif // GUID_B8E28E8D_57E6_410C_BC71_C50992BD9B1D
+#endif  // GUID_B8E28E8D_57E6_410C_BC71_C50992BD9B1D
