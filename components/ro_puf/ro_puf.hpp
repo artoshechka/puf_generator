@@ -26,13 +26,17 @@ public:
           size_t bits,
           uint32_t windowCycles = 200'000);
 
+    /// @brief Генерирует отпечаток попарным сравнением счётчиков осцилляторов
+    /// @return Вектор байт длиной ceil(bits/8)
     Fingerprint Generate() override;
+
+    /// @return Длина отпечатка в битах, заданная при конструировании
     size_t FingerprintBits() const override;
 
 private:
-    std::vector<std::unique_ptr<IOscillator>> oscillators_;
-    size_t bits_;
-    uint32_t window_;
+    std::vector<std::unique_ptr<IOscillator>> oscillators_; ///< Набор осцилляторов
+    size_t bits_;    ///< Длина отпечатка в битах
+    uint32_t window_; ///< Окно измерения в тактах процессора
 };
 
 } // namespace puf
