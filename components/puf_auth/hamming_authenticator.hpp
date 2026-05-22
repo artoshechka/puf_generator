@@ -19,17 +19,22 @@ public:
     /// @param thresholdPct Максимально допустимый intra-HD в процентах [0..100]
     HammingAuthenticator(Fingerprint reference, double thresholdPct = 10.0);
 
+    /// @brief Сравнивает candidate с эталоном по расстоянию Хэмминга
+    /// @param candidate Отпечаток, предъявленный при аутентификации
+    /// @return true если дробное HD не превышает thresholdPct_/100
     bool Authenticate(const Fingerprint& candidate) override;
 
-    /// @return Расстояние Хэмминга между двумя отпечатками в битах
+    /// @brief Считает число различающихся бит между двумя отпечатками
+    /// @return Расстояние Хэмминга в битах
     static size_t HammingDistance(const Fingerprint& a, const Fingerprint& b);
 
+    /// @brief Нормирует расстояние Хэмминга на длину отпечатка
     /// @return Дробное расстояние Хэмминга [0.0, 1.0]
     static double FractionalHD(const Fingerprint& a, const Fingerprint& b);
 
 private:
-    Fingerprint reference_;
-    double thresholdPct_;
+    Fingerprint reference_;  ///< Эталонный отпечаток, зарегистрированный при энролменте
+    double thresholdPct_;    ///< Порог приёма в процентах [0..100]
 };
 
 } // namespace puf

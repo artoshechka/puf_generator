@@ -10,6 +10,7 @@
 
 namespace puf {
 
+/// @brief Бинарный отпечаток устройства — последовательность байт
 using Fingerprint = std::vector<uint8_t>;
 
 } // namespace puf

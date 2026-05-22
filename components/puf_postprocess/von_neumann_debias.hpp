@@ -22,12 +22,16 @@ public:
     /// @param targetBits Желаемая длина выходного отпечатка в битах
     VonNeumannDebias(std::unique_ptr<IPufGenerator> inner, size_t targetBits);
 
+    /// @brief Применяет алгоритм фон Неймана к отпечатку inner_ до targetBits_ бит
+    /// @return Несмещённый отпечаток длиной targetBits_ бит
     Fingerprint Generate() override;
+
+    /// @return Целевая длина несмещённого отпечатка в битах
     size_t FingerprintBits() const override;
 
 private:
-    std::unique_ptr<IPufGenerator> inner_;
-    size_t targetBits_;
+    std::unique_ptr<IPufGenerator> inner_; ///< Исходный генератор сырого отпечатка
+    size_t targetBits_;                    ///< Желаемая длина выходного отпечатка в битах
 };
 
 } // namespace puf

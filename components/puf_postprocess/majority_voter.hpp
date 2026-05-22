@@ -22,12 +22,16 @@ public:
     /// @param rounds Число измерений (нечётное для однозначного большинства)
     MajorityVoter(std::unique_ptr<IPufGenerator> inner, size_t rounds = 3);
 
+    /// @brief Снимает rounds_ измерений и возвращает побитовое большинство
+    /// @return Стабилизированный отпечаток той же длины, что inner_
     Fingerprint Generate() override;
+
+    /// @return Длина отпечатка в битах (делегирует в inner_)
     size_t FingerprintBits() const override;
 
 private:
-    std::unique_ptr<IPufGenerator> inner_;
-    size_t rounds_;
+    std::unique_ptr<IPufGenerator> inner_; ///< Исходный генератор, опрашиваемый rounds_ раз
+    size_t rounds_;                        ///< Число измерений (нечётное для чёткого большинства)
 };
 
 } // namespace puf
