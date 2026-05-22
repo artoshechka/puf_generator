@@ -6,15 +6,22 @@ import glob
 import os
 import subprocess
 import sys
-from typing import Optional
 
 IDF_PATH = os.path.expanduser("~/esp/esp-idf")
 IDF_TAG = "v5.4.1"
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EXPORT_SH = os.path.join(IDF_PATH, "export.sh")
 
 
-def run(cmd: str, env: Optional[dict] = None) -> None:
-    result = subprocess.run(cmd, shell=True, env=env)
+def run(cmd: str) -> None:
+    result = subprocess.run(cmd, shell=True)
+    if result.returncode != 0:
+        sys.exit(result.returncode)
+
+
+def idf(cmd: str) -> None:
+    full = f". {EXPORT_SH} > /dev/null 2>&1 && {cmd}"
+    result = subprocess.run(full, shell=True, executable="/bin/bash")
     if result.returncode != 0:
         sys.exit(result.returncode)
 
@@ -33,19 +40,6 @@ def ensure_idf() -> None:
         run(f"{IDF_PATH}/install.sh esp32")
 
 
-def idf_env() -> dict:
-    script = os.path.join(IDF_PATH, "export.sh")
-    out = subprocess.check_output(
-        f". {script} > /dev/null 2>&1 && env", shell=True, executable="/bin/bash"
-    )
-    env = {}
-    for line in out.decode().splitlines():
-        if "=" in line:
-            k, _, v = line.partition("=")
-            env[k] = v
-    return env
-
-
 def detect_port() -> str:
     candidates = glob.glob("/dev/cu.usbmodem*") + glob.glob("/dev/cu.SLAB_USBtoUART*")
     if not candidates:
@@ -62,17 +56,15 @@ def main() -> None:
     args = parser.parse_args()
 
     ensure_idf()
-    env = idf_env()
-
-    port = args.port or (None if args.build_only else detect_port())
 
     os.chdir(PROJECT_ROOT)
-    run(f"idf.py set-target esp32", env=env)
+    idf("idf.py set-target esp32")
 
     if args.build_only:
-        run("idf.py build", env=env)
+        idf("idf.py build")
     else:
-        run(f"idf.py -p {port} flash monitor", env=env)
+        port = args.port or detect_port()
+        idf(f"idf.py -p {port} flash monitor")
 
 
 if __name__ == "__main__":
