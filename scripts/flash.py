@@ -11,6 +11,7 @@ IDF_PATH = os.path.expanduser("~/esp/esp-idf")
 IDF_TAG = "v5.4.1"
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXPORT_SH = os.path.join(IDF_PATH, "export.sh")
+IDF_PY = os.path.join(IDF_PATH, "tools", "idf.py")
 
 
 def run(cmd: str) -> None:
@@ -19,8 +20,8 @@ def run(cmd: str) -> None:
         sys.exit(result.returncode)
 
 
-def idf(cmd: str) -> None:
-    full = f". {EXPORT_SH} > /dev/null 2>&1 && {cmd}"
+def idf(args: str) -> None:
+    full = f". {EXPORT_SH} > /dev/null 2>&1 && {IDF_PY} {args}"
     result = subprocess.run(full, shell=True, executable="/bin/bash")
     if result.returncode != 0:
         sys.exit(result.returncode)
@@ -61,13 +62,13 @@ def main() -> None:
     ensure_idf()
 
     os.chdir(PROJECT_ROOT)
-    idf("idf.py set-target esp32")
+    idf("set-target esp32")
 
     if args.build_only:
-        idf("idf.py build")
+        idf("build")
     else:
         port = args.port or detect_port()
-        idf(f"idf.py -p {port} flash monitor")
+        idf(f"-p {port} flash monitor")
 
 
 if __name__ == "__main__":
