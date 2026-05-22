@@ -5,6 +5,7 @@
 #include <esp32_puf_factory.hpp>
 #include <ro_oscillator.hpp>
 #include <ro_puf.hpp>
+#include <ro_puf_config.hpp>
 #include <stdexcept>
 
 namespace puf
@@ -39,7 +40,13 @@ std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateRoPuf(size_t bits)
         oscs.emplace_back(std::make_unique<RoOscillator>(i));
     }
 
-    return std::make_unique<RoPuf>(std::move(oscs), bits);
+#ifdef CONFIG_PUF_WINDOW_CYCLES
+    const uint32_t windowCycles = CONFIG_PUF_WINDOW_CYCLES;
+#else
+    const uint32_t windowCycles = kDefaultWindowCycles;
+#endif
+
+    return std::make_unique<RoPuf>(std::move(oscs), bits, windowCycles);
 }
 
 }  // namespace puf

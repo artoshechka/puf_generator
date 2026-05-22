@@ -28,6 +28,9 @@ class NvsFingerprintStorage final : public IFingerprintStorage
     /// @return true если ключ "fingerprint" присутствует в NVS-пространстве "puf"
     bool HasFingerprint() const override;
 
+    /// @brief Удаляет ключ "fingerprint" из NVS-пространства "puf"
+    void Delete() override;
+
    private:
     static constexpr const char* kNvsNamespace = "puf";    ///< NVS-пространство имён
     static constexpr const char* kNvsKey = "fingerprint";  ///< Ключ хранения отпечатка
