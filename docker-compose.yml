@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pufdb
+      POSTGRES_USER: puf
+      POSTGRES_PASSWORD: puf
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U puf -d pufdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    environment:
+      DATABASE_URL: postgres://puf:puf@postgres:5432/pufdb
+      LISTEN_ADDR: ":8080"
+      ADMIN_TOKEN: "${ADMIN_TOKEN:-changeme}"
+      PUF_THRESHOLD_PCT: "${PUF_THRESHOLD_PCT:-10.0}"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
