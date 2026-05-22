@@ -82,7 +82,7 @@ puf:
 
 ## Fetch accumulated log buffer from the board
 board-logs:
-	$(PYTHON) scripts/get_board_logs.py $(PORT_ARG)
+	@$(PYTHON) scripts/get_board_logs.py $(PORT_ARG)
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
