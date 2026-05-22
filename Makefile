@@ -13,7 +13,7 @@ PYTHON     ?= python3
 PORT_ARG    = $(if $(ESP_PORT),--port $(ESP_PORT),)
 
 .PHONY: all firmware flash monitor server docker-up docker-down docker-clean \
-        test puf board-logs help
+        test puf board-logs raw-osc help
 
 all: firmware server
 
@@ -79,6 +79,10 @@ menuconfig:
 ## Read PUF fingerprint from the connected board (stdout only)
 puf:
 	@$(PYTHON) scripts/read_puf.py $(PORT_ARG)
+
+## Dump raw oscillator counts and analyze stability (--iterations N)
+raw-osc:
+	@$(PYTHON) scripts/analyze_raw.py $(PORT_ARG) $(if $(ITER),--iterations $(ITER),)
 
 ## Fetch accumulated log buffer from the board
 board-logs:
