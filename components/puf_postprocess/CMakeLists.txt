@@ -11,4 +11,11 @@ else()
     )
     target_include_directories(puf_postprocess PUBLIC .)
     target_link_libraries(puf_postprocess PUBLIC puf_core)
+
+    puf_add_test(
+        TARGET      puf_postprocess_test
+        SRCS        test/puf_postprocess_test.cpp
+        INCLUDE_DIRS test
+        LINK_LIBS   puf_postprocess
+    )
 endif()
