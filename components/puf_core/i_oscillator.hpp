@@ -7,11 +7,13 @@
 
 #include <cstdint>
 
-namespace puf {
+namespace puf
+{
 
 /// @brief Один осциллятор — измеряет число итераций за заданное окно тактов
-class IOscillator {
-public:
+class IOscillator
+{
+   public:
     virtual ~IOscillator() = default;
 
     /// @param[in] windowCycles Длительность окна в тактах процессора
@@ -19,6 +21,6 @@ public:
     virtual uint32_t Measure(uint32_t windowCycles) = 0;
 };
 
-} // namespace puf
+}  // namespace puf
 
-#endif // GUID_2D4A480D_DFF3_430C_AFBB_13695AC0C844
+#endif  // GUID_2D4A480D_DFF3_430C_AFBB_13695AC0C844

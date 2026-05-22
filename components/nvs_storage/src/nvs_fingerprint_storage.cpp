@@ -2,13 +2,14 @@
 /// @author Artemenko Anton
 /// @brief Реализация NVS-хранилища отпечатка для ESP32
 
-#include <nvs_fingerprint_storage.hpp>
-
 #include <nvs.h>
 #include <nvs_flash.h>
+
+#include <nvs_fingerprint_storage.hpp>
 #include <stdexcept>
 
-namespace puf {
+namespace puf
+{
 
 void NvsFingerprintStorage::Store(const Fingerprint& fp)
 {
@@ -31,7 +32,11 @@ Fingerprint NvsFingerprintStorage::Load()
 
     size_t size = 0;
     err = nvs_get_blob(handle, kNvsKey, nullptr, &size);
-    if (err != ESP_OK) { nvs_close(handle); throw std::runtime_error("nvs_get_blob size failed"); }
+    if (err != ESP_OK)
+    {
+        nvs_close(handle);
+        throw std::runtime_error("nvs_get_blob size failed");
+    }
 
     Fingerprint fp(size);
     err = nvs_get_blob(handle, kNvsKey, fp.data(), &size);
@@ -52,4 +57,4 @@ bool NvsFingerprintStorage::HasFingerprint() const
     return has;
 }
 
-} // namespace puf
+}  // namespace puf

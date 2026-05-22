@@ -5,19 +5,19 @@
 #ifndef GUID_AFD8C96F_D101_414A_A481_CE68B9F27C2E
 #define GUID_AFD8C96F_D101_414A_A481_CE68B9F27C2E
 
+#include <cstddef>
 #include <i_oscillator.hpp>
 
-#include <cstddef>
-
-namespace puf {
+namespace puf
+{
 
 /// @brief Программный кольцевой осциллятор, размещённый в IRAM.
-///
 /// Вариация частот между экземплярами обусловлена разницей IRAM-адресов
 /// (cache-line alignment, pipeline timing) — программная аппроксимация RO PUF.
-class RoOscillator final : public IOscillator {
-public:
-    static constexpr size_t kMaxIndex = 31; ///< Максимально допустимый индекс (32 осциллятора)
+class RoOscillator final : public IOscillator
+{
+   public:
+    static constexpr size_t kMaxIndex = 31;  ///< Максимально допустимый индекс (32 осциллятора)
 
     /// @param[in] index Индекс осциллятора [0, kMaxIndex]
     explicit RoOscillator(size_t index);
@@ -27,10 +27,10 @@ public:
     /// @return Число итераций за windowCycles тактов
     uint32_t Measure(uint32_t windowCycles) override;
 
-private:
-    size_t index_; ///< Индекс осциллятора — определяет IRAM-адрес функции
+   private:
+    size_t index_;  ///< Индекс осциллятора — определяет IRAM-адрес функции
 };
 
-} // namespace puf
+}  // namespace puf
 
-#endif // GUID_AFD8C96F_D101_414A_A481_CE68B9F27C2E
+#endif  // GUID_AFD8C96F_D101_414A_A481_CE68B9F27C2E

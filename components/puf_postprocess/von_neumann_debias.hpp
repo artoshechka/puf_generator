@@ -6,18 +6,18 @@
 #define GUID_3823B7A0_1145_4027_8B0B_1A5662356C69
 
 #include <i_puf_generator.hpp>
-
 #include <memory>
 
-namespace puf {
+namespace puf
+{
 
 /// @brief Применяет алгоритм фон Неймана к сырому отпечатку IPufGenerator.
-///
 /// Алгоритм: обрабатывает пары бит — (0,1)→0, (1,0)→1, одинаковые→отброс.
 /// Результат короче исходного, но статистически несмещён.
 /// При нехватке бит запрашивает генератор повторно.
-class VonNeumannDebias final : public IPufGenerator {
-public:
+class VonNeumannDebias final : public IPufGenerator
+{
+   public:
     /// @param[in] inner      Исходный генератор (владение передаётся)
     /// @param[in] targetBits Желаемая длина выходного отпечатка в битах
     VonNeumannDebias(std::unique_ptr<IPufGenerator> inner, size_t targetBits);
@@ -29,11 +29,11 @@ public:
     /// @return Целевая длина несмещённого отпечатка в битах
     size_t FingerprintBits() const override;
 
-private:
-    std::unique_ptr<IPufGenerator> inner_; ///< Исходный генератор сырого отпечатка
-    size_t targetBits_;                    ///< Желаемая длина выходного отпечатка в битах
+   private:
+    std::unique_ptr<IPufGenerator> inner_;  ///< Исходный генератор сырого отпечатка
+    size_t targetBits_;                     ///< Желаемая длина выходного отпечатка в битах
 };
 
-} // namespace puf
+}  // namespace puf
 
-#endif // GUID_3823B7A0_1145_4027_8B0B_1A5662356C69
+#endif  // GUID_3823B7A0_1145_4027_8B0B_1A5662356C69

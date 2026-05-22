@@ -7,11 +7,13 @@
 
 #include <fingerprint.hpp>
 
-namespace puf {
+namespace puf
+{
 
 /// @brief Хранилище эталонного отпечатка устройства
-class IFingerprintStorage {
-public:
+class IFingerprintStorage
+{
+   public:
     virtual ~IFingerprintStorage() = default;
 
     /// @brief Сохраняет отпечаток в энергонезависимую память
@@ -26,6 +28,6 @@ public:
     virtual bool HasFingerprint() const = 0;
 };
 
-} // namespace puf
+}  // namespace puf
 
-#endif // GUID_0608B259_B744_40E7_B63C_B7BA37D8125D
+#endif  // GUID_0608B259_B744_40E7_B63C_B7BA37D8125D
