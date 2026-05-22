@@ -11,10 +11,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Server объединяет слой хранения и конфигурацию для HTTP-обработчиков.
+// Server объединяет слой хранения, конфигурацию и метрики для HTTP-обработчиков.
 type Server struct {
-	store *Store
-	cfg   Config
+	store   *Store
+	cfg     Config
+	metrics Metrics
 }
 
 // routes регистрирует все REST-эндпоинты и возвращает настроенный ServeMux.
@@ -24,7 +25,9 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("POST /devices/{id}/verify", s.handleVerify)
 	mux.HandleFunc("GET /devices", s.adminAuth(s.handleList))
 	mux.HandleFunc("DELETE /devices/{id}", s.adminAuth(s.handleDelete))
-	return mux
+	mux.HandleFunc("GET /metrics", s.handleMetrics)
+	mux.HandleFunc("GET /health", s.handleHealth)
+	return requestLogger(mux)
 }
 
 // handleEnroll сохраняет эталонный PUF-отпечаток устройства (только для администратора).
@@ -50,6 +53,7 @@ func (s *Server) handleEnroll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.metrics.EnrollTotal.Add(1)
 	w.WriteHeader(http.StatusCreated)
 	writeJSON(w, map[string]string{"device_id": id, "status": "enrolled"})
 }
@@ -76,6 +80,7 @@ func (s *Server) handleVerify(w http.ResponseWriter, r *http.Request) {
 	device, err := s.store.Get(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			s.metrics.VerifyNotFound.Add(1)
 			writeError(w, http.StatusNotFound, "device not enrolled")
 			return
 		}
@@ -87,6 +92,14 @@ func (s *Server) handleVerify(w http.ResponseWriter, r *http.Request) {
 	reference, _ := parseHex(device.FingerprintHex)
 	hdPct := fractionalHD(reference, candidate) * 100.0
 	ok := hdPct <= s.cfg.ThresholdPct
+
+	s.metrics.RecordVerify(ok, hdPct)
+	slog.Info("verify",
+		"device_id", id,
+		"ok", ok,
+		"hamming_pct", hdPct,
+		"threshold_pct", s.cfg.ThresholdPct,
+	)
 
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
