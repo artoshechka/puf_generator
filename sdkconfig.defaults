@@ -1,0 +1,8 @@
+# Flash size matching the ESP32-C3 module (4 MB).
+# Without this the image header defaults to 2 MB and triggers a boot warning.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Route console (stdin + stdout) through USB Serial/JTAG.
+# ESP32-C3 native USB: UART0 is not connected to the USB port, so getchar()
+# silently drops all input from the host script without this setting.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y

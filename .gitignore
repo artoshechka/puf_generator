@@ -11,8 +11,9 @@ build_host/
 # Doxygen output
 docs/
 
-# ESP-IDF generated configs
-sdkconfig*
+# ESP-IDF generated configs (runtime only; sdkconfig.defaults is tracked)
+sdkconfig
+sdkconfig.old
 
 # Go build output
 server/puf-server
