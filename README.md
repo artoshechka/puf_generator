@@ -209,6 +209,16 @@ puf_generator/
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) v5.x
 - [Conan](https://conan.io/) 2.x (`pip install conan`)
 - CMake 3.16+
+- [Doxygen](https://www.doxygen.nl/) 1.9+ (для генерации документации)
+
+---
+
+## Документация
+
+```bash
+doxygen Doxyfile
+# HTML-документация генерируется в docs/html/index.html
+```
 
 ---
 

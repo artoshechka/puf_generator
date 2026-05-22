@@ -1,5 +1,12 @@
 build/
+build_host/
+.cache/
 .vscode/
 .PVS-Studio/
 
 .DS_Store
+*.o
+*.a
+
+# Doxygen output
+docs/
