@@ -90,7 +90,6 @@ help:
 	@echo ""
 	@echo "Usage: make <target>"
 	@echo ""
-	@grep -E '^## ' Makefile | sed 's/^## /  /' | \
-	    paste - <(grep -E '^[a-z_-]+:' Makefile | sed 's/:.*//' | grep -v '^all') | \
-	    awk '{printf "  %-18s %s\n", $$NF, substr($$0, 1, index($$0, $$NF)-1)}'
+	@grep -E '^## .+|^[a-z_-]+:' Makefile | \
+	    awk '/^## / { desc=substr($$0,4) } /^[a-z_-]+:/ { split($$0,a,":"); if (desc) printf "  %-18s %s\n", a[1], desc; desc="" }'
 	@echo ""
