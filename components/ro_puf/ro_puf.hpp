@@ -7,6 +7,7 @@
 
 #include <i_oscillator.hpp>
 #include <i_puf_generator.hpp>
+#include <ro_puf_config.hpp>
 #include <memory>
 #include <vector>
 
@@ -22,7 +23,7 @@ class RoPuf final : public IPufGenerator
     /// @param[in] oscillators  Набор осцилляторов, минимум 2
     /// @param[in] bits         Длина отпечатка в битах
     /// @param[in] windowCycles Длительность окна измерения в тактах
-    RoPuf(std::vector<std::unique_ptr<IOscillator>> oscillators, size_t bits, uint32_t windowCycles = 200'000);
+    RoPuf(std::vector<std::unique_ptr<IOscillator>> oscillators, size_t bits, uint32_t windowCycles = kDefaultWindowCycles);
 
     /// @brief Генерирует отпечаток попарным сравнением счётчиков осцилляторов
     /// @return Вектор байт длиной ceil(bits/8)
