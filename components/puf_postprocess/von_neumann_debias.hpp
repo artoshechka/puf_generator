@@ -18,8 +18,8 @@ namespace puf {
 /// При нехватке бит запрашивает генератор повторно.
 class VonNeumannDebias final : public IPufGenerator {
 public:
-    /// @param inner      Исходный генератор
-    /// @param targetBits Желаемая длина выходного отпечатка в битах
+    /// @param[in] inner      Исходный генератор (владение передаётся)
+    /// @param[in] targetBits Желаемая длина выходного отпечатка в битах
     VonNeumannDebias(std::unique_ptr<IPufGenerator> inner, size_t targetBits);
 
     /// @brief Применяет алгоритм фон Неймана к отпечатку inner_ до targetBits_ бит

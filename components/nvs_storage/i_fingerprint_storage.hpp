@@ -15,7 +15,7 @@ public:
     virtual ~IFingerprintStorage() = default;
 
     /// @brief Сохраняет отпечаток в энергонезависимую память
-    /// @param fp Отпечаток для сохранения
+    /// @param[in] fp Отпечаток для сохранения
     virtual void Store(const Fingerprint& fp) = 0;
 
     /// @brief Загружает сохранённый отпечаток

@@ -21,7 +21,7 @@ public:
 
     /// @brief Загружает отпечаток из NVS
     /// @return Ранее сохранённый отпечаток
-    /// @throws std::runtime_error если отпечаток не найден
+    /// @throws std::runtime_error если ключ не найден или NVS недоступен
     Fingerprint Load() override;
 
     /// @return true если ключ "fingerprint" присутствует в NVS-пространстве "puf"

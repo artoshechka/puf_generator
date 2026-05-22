@@ -15,7 +15,7 @@ namespace puf {
 class Esp32PufFactory final : public IPufFactory {
 public:
     /// @brief Создаёт RoPuf с минимально необходимым числом осцилляторов
-    /// @param bits Желаемая длина отпечатка в битах (≤ N*(N-1)/2, N — осцилляторы)
+    /// @param[in] bits Желаемая длина отпечатка в битах (≤ N*(N-1)/2, N — осцилляторы)
     /// @return Полностью сконфигурированный генератор отпечатка
     std::unique_ptr<IPufGenerator> CreateRoPuf(size_t bits) override;
 };

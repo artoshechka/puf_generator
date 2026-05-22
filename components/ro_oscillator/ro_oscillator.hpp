@@ -19,11 +19,11 @@ class RoOscillator final : public IOscillator {
 public:
     static constexpr size_t kMaxIndex = 31; ///< Максимально допустимый индекс (32 осциллятора)
 
-    /// @param index Индекс осциллятора [0, kMaxIndex]
+    /// @param[in] index Индекс осциллятора [0, kMaxIndex]
     explicit RoOscillator(size_t index);
 
     /// @brief Запускает плотный цикл в IRAM и возвращает число итераций
-    /// @param windowCycles Длительность окна в тактах процессора
+    /// @param[in] windowCycles Длительность окна в тактах процессора
     /// @return Число итераций за windowCycles тактов
     uint32_t Measure(uint32_t windowCycles) override;
 

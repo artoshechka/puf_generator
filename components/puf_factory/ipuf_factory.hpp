@@ -18,7 +18,7 @@ public:
     virtual ~IPufFactory() = default;
 
     /// @brief Создаёт Ring Oscillator PUF
-    /// @param bits Длина отпечатка в битах
+    /// @param[in] bits Длина отпечатка в битах
     virtual std::unique_ptr<IPufGenerator> CreateRoPuf(size_t bits) = 0;
 };
 

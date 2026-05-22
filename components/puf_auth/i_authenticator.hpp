@@ -15,7 +15,7 @@ public:
     virtual ~IAuthenticator() = default;
 
     /// @brief Проверяет подлинность устройства по предъявленному отпечатку
-    /// @param candidate Отпечаток, полученный при аутентификации
+    /// @param[in] candidate Отпечаток, полученный при аутентификации
     /// @return true если отпечаток соответствует эталону в пределах порога
     virtual bool Authenticate(const Fingerprint& candidate) = 0;
 };

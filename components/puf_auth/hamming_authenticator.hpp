@@ -15,12 +15,12 @@ namespace puf {
 /// не превышает порог (по умолчанию 10%).
 class HammingAuthenticator final : public IAuthenticator {
 public:
-    /// @param reference   Эталонный отпечаток (зарегистрированный)
-    /// @param thresholdPct Максимально допустимый intra-HD в процентах [0..100]
+    /// @param[in] reference    Эталонный отпечаток (зарегистрированный)
+    /// @param[in] thresholdPct Максимально допустимый intra-HD в процентах [0..100]
     HammingAuthenticator(Fingerprint reference, double thresholdPct = 10.0);
 
     /// @brief Сравнивает candidate с эталоном по расстоянию Хэмминга
-    /// @param candidate Отпечаток, предъявленный при аутентификации
+    /// @param[in] candidate Отпечаток, предъявленный при аутентификации
     /// @return true если дробное HD не превышает thresholdPct_/100
     bool Authenticate(const Fingerprint& candidate) override;
 

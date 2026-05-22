@@ -18,8 +18,8 @@ namespace puf {
 /// rounds кратных запросов к inner_.
 class MajorityVoter final : public IPufGenerator {
 public:
-    /// @param inner  Исходный генератор
-    /// @param rounds Число измерений (нечётное для однозначного большинства)
+    /// @param[in] inner  Исходный генератор (владение передаётся)
+    /// @param[in] rounds Число измерений (нечётное для однозначного большинства)
     MajorityVoter(std::unique_ptr<IPufGenerator> inner, size_t rounds = 3);
 
     /// @brief Снимает rounds_ измерений и возвращает побитовое большинство

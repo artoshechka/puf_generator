@@ -19,9 +19,9 @@ namespace puf {
 /// счётчиков. Не зависит от платформы — любые реализации IOscillator.
 class RoPuf final : public IPufGenerator {
 public:
-    /// @param oscillators  Набор осцилляторов, минимум 2
-    /// @param bits         Длина отпечатка в битах
-    /// @param windowCycles Длительность окна измерения в тактах
+    /// @param[in] oscillators  Набор осцилляторов, минимум 2
+    /// @param[in] bits         Длина отпечатка в битах
+    /// @param[in] windowCycles Длительность окна измерения в тактах
     RoPuf(std::vector<std::unique_ptr<IOscillator>> oscillators,
           size_t bits,
           uint32_t windowCycles = 200'000);

@@ -12,7 +12,7 @@ namespace puf::test {
 /// @brief Возвращает фиксированное значение счётчика — используется в тестах RoPuf
 class MockOscillator final : public IOscillator {
 public:
-    /// @param fixedCount Значение, которое будет возвращать Measure() при любом окне
+    /// @param[in] fixedCount Значение, которое будет возвращать Measure() при любом окне
     explicit MockOscillator(uint32_t fixedCount) : fixedCount_(fixedCount) {}
 
     /// @brief Всегда возвращает fixedCount_ независимо от windowCycles

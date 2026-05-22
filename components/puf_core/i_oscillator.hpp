@@ -14,7 +14,7 @@ class IOscillator {
 public:
     virtual ~IOscillator() = default;
 
-    /// @param windowCycles Длительность окна в тактах процессора
+    /// @param[in] windowCycles Длительность окна в тактах процессора
     /// @return Число итераций за windowCycles тактов
     virtual uint32_t Measure(uint32_t windowCycles) = 0;
 };
