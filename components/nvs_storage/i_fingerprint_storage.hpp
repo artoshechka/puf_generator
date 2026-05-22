@@ -26,6 +26,9 @@ class IFingerprintStorage
 
     /// @return true если отпечаток уже сохранён
     virtual bool HasFingerprint() const = 0;
+
+    /// @brief Удаляет сохранённый отпечаток из энергонезависимой памяти
+    virtual void Delete() = 0;
 };
 
 }  // namespace puf

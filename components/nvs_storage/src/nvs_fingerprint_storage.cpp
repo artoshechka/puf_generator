@@ -57,4 +57,18 @@ bool NvsFingerprintStorage::HasFingerprint() const
     return has;
 }
 
+void NvsFingerprintStorage::Delete()
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(kNvsNamespace, NVS_READWRITE, &handle);
+    if (err != ESP_OK) throw std::runtime_error("nvs_open failed");
+
+    err = nvs_erase_key(handle, kNvsKey);
+    if (err == ESP_OK) nvs_commit(handle);
+    nvs_close(handle);
+
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND)
+        throw std::runtime_error("nvs_erase_key failed");
+}
+
 }  // namespace puf
