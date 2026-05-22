@@ -25,7 +25,7 @@ namespace puf
         while ((esp_cpu_get_cycle_count() - t0) < window)                                          \
         {                                                                                          \
             sink ^= cnt;                                                                           \
-            ++cnt;                                                                                 \
+            cnt = cnt + 1u;                                                                        \
         }                                                                                          \
         (void)sink;                                                                                \
         return cnt;                                                                                \
