@@ -246,6 +246,9 @@ classDiagram
 
 ```
 puf_generator/
+├── Makefile                       # единая точка входа для всех команд
+├── .env.example                   # шаблон конфигурации окружения
+├── docker-compose.yml
 ├── conanfile.py
 ├── cmake/
 │   └── ctest_cmake.txt        # puf_add_test() + PUF_BUILD_TESTS флаг
@@ -299,76 +302,57 @@ puf_generator/
 │   ├── main.cpp
 │   ├── Kconfig.projbuild
 │   └── CMakeLists.txt
+├── scripts/
+│   ├── flash.py                   # сборка и прошивка ESP32
+│   ├── read_puf.py                # чтение PUF-отпечатка по UART
+│   └── get_board_logs.py          # сбор логов с платы по команде
 └── server/                        # Go-сервер верификации
     ├── go.mod
     ├── main.go
     ├── config.go
     ├── puf.go
     ├── store.go
-    └── handler.go
+    ├── handler.go
+    ├── middleware.go
+    └── metrics.go
 ```
 
 ---
 
 ## Требования
 
-- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) v5.x
-- [Conan](https://conan.io/) 2.x (`pip install conan`)
-- CMake 3.16+
-- [Doxygen](https://www.doxygen.nl/) 1.9+ (для генерации документации)
+- Python 3.9+ и `pip install pyserial`
+- Docker и Docker Compose
+- [Conan](https://conan.io/) 2.x + CMake 3.16+ (только для хост-тестов)
+- [Doxygen](https://www.doxygen.nl/) 1.9+ (опционально, для документации)
+
+ESP-IDF устанавливается автоматически скриптом при первом запуске `make flash`.
 
 ---
 
-## Документация
+## Сборка и запуск
+
+Все команды унифицированы через `Makefile`. Конфигурация — через `.env`:
 
 ```bash
-doxygen Doxyfile
-# HTML-документация генерируется в docs/html/index.html
+cp .env.example .env   # настроить пути и токены под своё окружение
 ```
 
----
+| Команда | Действие |
+|---|---|
+| `make firmware` | Собрать прошивку ESP32 |
+| `make flash` | Прошить плату и открыть монитор |
+| `make monitor` | Открыть монитор без перепрошивки |
+| `make server` | Собрать Go-бинарь локально |
+| `make docker-up` | Запустить сервер + PostgreSQL в Docker |
+| `make docker-down` | Остановить контейнеры |
+| `make docker-clean` | Остановить контейнеры и удалить БД |
+| `make docker-logs` | Следить за логами сервера |
+| `make test` | Запустить хост-тесты через Conan + CMake |
+| `make puf` | Прочитать PUF-отпечаток с платы |
+| `make board-logs` | Забрать логи из буфера платы |
 
-## Сборка
-
-### ESP32
-
-#### Установка ESP-IDF
-
-```bash
-git clone --recursive --depth 1 --branch v5.4.1 https://github.com/espressif/esp-idf.git ~/esp/esp-idf
-cd ~/esp/esp-idf && ./install.sh esp32
-```
-
-> `install.sh` must be run before `export.sh`. Re-run it after any ESP-IDF update or if `export.sh` reports missing Python dependencies.
-
-#### Прошивка
-
-```bash
-# Activate environment (required in every new terminal)
-. ~/esp/esp-idf/export.sh
-
-idf.py set-target esp32
-
-# Linux: /dev/ttyUSB0, macOS: /dev/cu.usbmodem101
-idf.py -p /dev/cu.usbmodem101 flash monitor
-```
-
-#### Автоматизация (scripts/flash.py)
-
-```bash
-# Auto-detect port, install IDF if missing, build and flash
-python3 scripts/flash.py
-
-# Explicit port
-python3 scripts/flash.py --port /dev/cu.usbmodem101
-
-# Build only
-python3 scripts/flash.py --build-only
-```
-
-> Requires Python 3.9+. The script clones and installs ESP-IDF automatically on first run.
-
-### Конфигурация (menuconfig)
+### Конфигурация прошивки (menuconfig)
 
 ```bash
 idf.py menuconfig   # PUF Generator → длина отпечатка, окно, число раундов
@@ -380,20 +364,11 @@ idf.py menuconfig   # PUF Generator → длина отпечатка, окно,
 | `PUF_WINDOW_CYCLES` | 200 000 | Окно измерения в тактах CPU |
 | `PUF_MAJORITY_ROUNDS` | 3 | Число раундов голосования (нечётное) |
 
-### Хост-тесты (через Conan)
+### Документация
 
 ```bash
-# Сгенерировать хост-профиль (один раз)
-conan profile detect --name host
-
-# Установить зависимости и настроить сборку
-conan install . --output-folder=build_host --build=missing -pr=profiles/host
-
-# Собрать и запустить тесты
-cmake -B build_host -DCMAKE_TOOLCHAIN_FILE=build_host/conan_toolchain.cmake \
-      -DPUF_BUILD_TESTS=ON
-cmake --build build_host
-ctest --test-dir build_host --output-on-failure
+doxygen Doxyfile
+# HTML → docs/html/index.html
 ```
 
 ---

@@ -7,8 +7,8 @@ import os
 import subprocess
 import sys
 
-IDF_PATH = os.path.expanduser("~/esp/esp-idf")
-IDF_TAG = "v5.4.1"
+IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH", "~/esp/esp-idf"))
+IDF_TAG = os.getenv("IDF_TAG", "v5.4.1")
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IDF_PY = os.path.join(IDF_PATH, "tools", "idf.py")
 ESPRESSIF_DIR = os.path.expanduser("~/.espressif")
@@ -79,17 +79,22 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="Serial port (e.g. /dev/cu.usbmodem101)")
     parser.add_argument("--build-only", action="store_true", help="Build without flashing")
+    parser.add_argument("--monitor-only", action="store_true", help="Open monitor without building or flashing")
     args = parser.parse_args()
 
     ensure_idf()
 
     os.chdir(PROJECT_ROOT)
-    idf("set-target esp32c3")
 
-    if args.build_only:
+    if args.monitor_only:
+        port = args.port or detect_port()
+        idf(f"-p {port} monitor")
+    elif args.build_only:
+        idf("set-target esp32c3")
         idf("build")
     else:
         port = args.port or detect_port()
+        idf("set-target esp32c3")
         idf(f"-p {port} flash monitor")
 
 
