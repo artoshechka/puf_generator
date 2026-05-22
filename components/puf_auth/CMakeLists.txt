@@ -4,6 +4,7 @@ if(ESP_PLATFORM)
         INCLUDE_DIRS "."
         REQUIRES puf_core
     )
+    target_compile_options(${COMPONENT_LIB} PRIVATE -fexceptions)
 else()
     add_library(puf_auth src/hamming_authenticator.cpp)
     target_include_directories(puf_auth PUBLIC .)

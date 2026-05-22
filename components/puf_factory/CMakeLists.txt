@@ -3,3 +3,4 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES puf_core ro_oscillator ro_puf
 )
+target_compile_options(${COMPONENT_LIB} PRIVATE -fexceptions)
