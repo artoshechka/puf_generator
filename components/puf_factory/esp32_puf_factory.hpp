@@ -1,6 +1,6 @@
 /// @file esp32_puf_factory.hpp
 /// @author Artemenko Anton
-/// @brief Реализация фабрики PUF для ESP32
+/// @brief PUF factory implementation for ESP32
 
 #ifndef GUID_3F4704FD_47CA_432D_B8AF_5A4886709E85
 #define GUID_3F4704FD_47CA_432D_B8AF_5A4886709E85
@@ -10,14 +10,14 @@
 namespace puf
 {
 
-/// @brief Реализация фабрики PUF для платформы ESP32.
-/// Создаёт RoPuf из 32 программных IRAM-осцилляторов (RoOscillator).
+/// @brief PUF factory implementation for the ESP32 platform.
+/// Creates a RoPuf from 32 software IRAM oscillators (RoOscillator).
 class Esp32PufFactory final : public IPufFactory
 {
    public:
-    /// @brief Создаёт RoPuf с минимально необходимым числом осцилляторов
-    /// @param[in] bits Желаемая длина отпечатка в битах (≤ N*(N-1)/2, N — осцилляторы)
-    /// @return Полностью сконфигурированный генератор отпечатка
+    /// @brief Creates a RoPuf with the minimum required number of oscillators
+    /// @param[in] bits Desired fingerprint length in bits (≤ N*(N-1)/2, N — oscillators)
+    /// @return Fully configured fingerprint generator
     std::unique_ptr<IPufGenerator> CreateRoPuf(size_t bits) override;
 };
 

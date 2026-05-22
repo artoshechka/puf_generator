@@ -1,6 +1,6 @@
 /// @file puf_metrics_test.cpp
 /// @author Artemenko Anton
-/// @brief Модульные тесты для puf::metrics
+/// @brief Unit tests for puf::metrics
 
 #ifndef GUID_3A7F1C9E_B842_4D5F_A610_E98C2D047F31
 #define GUID_3A7F1C9E_B842_4D5F_A610_E98C2D047F31
@@ -52,7 +52,7 @@ TEST(FractionalHD, FractionalHDMax)
 
 TEST(FractionalHD, FractionalHDHalf)
 {
-    // 0x0F = 00001111, 0xF0 = 11110000 — все 8 бит различаются
+    // 0x0F = 00001111, 0xF0 = 11110000 — all 8 bits differ
     Fingerprint a = {0x0F};
     Fingerprint b = {0xF0};
     EXPECT_DOUBLE_EQ(FractionalHD(a, b), 1.0);
@@ -74,7 +74,7 @@ TEST(IntraHD, IntraHDIdenticalSamples)
 
 TEST(IntraHD, IntraHDTwoSamples)
 {
-    // 0xFF и 0x00 — 8 из 8 бит различаются → HD = 1.0
+    // 0xFF and 0x00 — 8 out of 8 bits differ → HD = 1.0
     std::vector<Fingerprint> samples = {{0xFF}, {0x00}};
     EXPECT_DOUBLE_EQ(IntraHD(samples), 1.0);
 }
@@ -116,7 +116,7 @@ TEST(Uniformity, UniformityAllOne)
 
 TEST(Uniformity, UniformityHalf)
 {
-    // 0xAA = 10101010 → 4 единицы из 8
+    // 0xAA = 10101010 → 4 ones out of 8
     Fingerprint fp = {0xAA};
     EXPECT_DOUBLE_EQ(Uniformity(fp), 0.5);
 }

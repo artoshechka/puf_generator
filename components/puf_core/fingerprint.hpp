@@ -1,6 +1,6 @@
 /// @file fingerprint.hpp
 /// @author Artemenko Anton
-/// @brief Тип отпечатка устройства
+/// @brief Device fingerprint type
 
 #ifndef GUID_0448F913_446D_4ECC_B55C_D1CED83A748D
 #define GUID_0448F913_446D_4ECC_B55C_D1CED83A748D
@@ -11,7 +11,7 @@
 namespace puf
 {
 
-/// @brief Бинарный отпечаток устройства — последовательность байт
+/// @brief Binary device fingerprint — sequence of bytes
 using Fingerprint = std::vector<uint8_t>;
 
 }  // namespace puf

@@ -1,6 +1,6 @@
 /// @file majority_voter.hpp
 /// @author Artemenko Anton
-/// @brief Декоратор IPufGenerator — повышает стабильность голосованием большинства
+/// @brief IPufGenerator decorator — improves stability via majority voting
 
 #ifndef GUID_CC8BBC5D_E582_4DB0_BE30_55353A736571
 #define GUID_CC8BBC5D_E582_4DB0_BE30_55353A736571
@@ -12,27 +12,27 @@
 namespace puf
 {
 
-/// @brief Снимает N измерений и возвращает побитовое большинство.
-/// Каждый бит итогового отпечатка равен 1, если в более чем половине
-/// измерений соответствующий бит равен 1. Снижает intra-HD за счёт
-/// rounds кратных запросов к inner_.
+/// @brief Takes N measurements and returns the bitwise majority.
+/// Each bit of the resulting fingerprint is 1 if more than half of the
+/// measurements have the corresponding bit equal to 1. Reduces intra-HD
+/// at the cost of rounds multiple queries to inner_.
 class MajorityVoter final : public IPufGenerator
 {
    public:
-    /// @param[in] inner  Исходный генератор (владение передаётся)
-    /// @param[in] rounds Число измерений (нечётное для однозначного большинства)
+    /// @param[in] inner  Source generator (ownership is transferred)
+    /// @param[in] rounds Number of measurements (odd for unambiguous majority)
     MajorityVoter(std::unique_ptr<IPufGenerator> inner, size_t rounds = kDefaultMajorityRounds);
 
-    /// @brief Снимает rounds_ измерений и возвращает побитовое большинство
-    /// @return Стабилизированный отпечаток той же длины, что inner_
+    /// @brief Takes rounds_ measurements and returns the bitwise majority
+    /// @return Stabilized fingerprint of the same length as inner_
     Fingerprint Generate() override;
 
-    /// @return Длина отпечатка в битах (делегирует в inner_)
+    /// @return Fingerprint length in bits (delegates to inner_)
     size_t FingerprintBits() const override;
 
    private:
-    std::unique_ptr<IPufGenerator> inner_;  ///< Исходный генератор, опрашиваемый rounds_ раз
-    size_t rounds_;                         ///< Число измерений (нечётное для чёткого большинства)
+    std::unique_ptr<IPufGenerator> inner_;  ///< Source generator queried rounds_ times
+    size_t rounds_;                         ///< Number of measurements (odd for clear majority)
 };
 
 }  // namespace puf

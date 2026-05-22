@@ -1,6 +1,6 @@
 /// @file main.cpp
 /// @author Artemenko Anton
-/// @brief Точка входа — энролмент и аутентификация по PUF-отпечатку
+/// @brief Entry point — enrollment and authentication via PUF fingerprint
 
 #include <sdkconfig.h>
 
@@ -28,21 +28,21 @@ extern "C" void app_main()
 
     if (!storage.HasFingerprint())
     {
-        // энролмент: первый запуск
+        // enrollment: first run
         const puf::Fingerprint fp = generator->Generate();
         storage.Store(fp);
-        ESP_LOGI(kTag, "Энролмент: отпечаток сохранён (%zu бит)", generator->FingerprintBits());
+        ESP_LOGI(kTag, "Enrollment: fingerprint stored (%zu bits)", generator->FingerprintBits());
         for (const uint8_t byte : fp) printf("%02x", byte);
         printf("\n");
     }
     else
     {
-        // аутентификация
+        // authentication
         const puf::Fingerprint reference = storage.Load();
         const puf::Fingerprint candidate = generator->Generate();
         puf::HammingAuthenticator auth(reference);
         const bool ok = auth.Authenticate(candidate);
-        ESP_LOGI(kTag, "Аутентификация: %s", ok ? "успех" : "отказ");
+        ESP_LOGI(kTag, "Authentication: %s", ok ? "success" : "denied");
         for (const uint8_t byte : candidate) printf("%02x", byte);
         printf("\n");
     }

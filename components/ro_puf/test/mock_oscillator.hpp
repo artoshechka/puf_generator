@@ -1,6 +1,6 @@
 /// @file mock_oscillator.hpp
 /// @author Artemenko Anton
-/// @brief Тестовый заменитель осциллятора с фиксированным счётчиком
+/// @brief Test stub oscillator with a fixed counter value
 
 #ifndef GUID_0C75333C_AD2B_4B27_9E61_678103C88833
 #define GUID_0C75333C_AD2B_4B27_9E61_678103C88833
@@ -10,24 +10,24 @@
 namespace puf::test
 {
 
-/// @brief Возвращает фиксированное значение счётчика — используется в тестах RoPuf
+/// @brief Returns a fixed counter value — used in RoPuf tests
 class MockOscillator final : public IOscillator
 {
    public:
-    /// @param[in] fixedCount Значение, которое будет возвращать Measure() при любом окне
+    /// @param[in] fixedCount Value that Measure() will return for any window
     explicit MockOscillator(uint32_t fixedCount) : fixedCount_(fixedCount)
     {
     }
 
-    /// @brief Всегда возвращает fixedCount_ независимо от windowCycles
-    /// @return Фиксированный счётчик
+    /// @brief Always returns fixedCount_ regardless of windowCycles
+    /// @return Fixed counter value
     uint32_t Measure(uint32_t) override
     {
         return fixedCount_;
     }
 
    private:
-    uint32_t fixedCount_;  ///< Фиксированное возвращаемое значение счётчика
+    uint32_t fixedCount_;  ///< Fixed counter value to return
 };
 
 }  // namespace puf::test

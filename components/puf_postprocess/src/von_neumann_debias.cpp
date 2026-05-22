@@ -1,6 +1,6 @@
 /// @file von_neumann_debias.cpp
 /// @author Artemenko Anton
-/// @brief Реализация декоратора фон Неймана
+/// @brief Implementation of the Von Neumann decorator
 
 #include <von_neumann_debias.hpp>
 
@@ -32,7 +32,7 @@ Fingerprint VonNeumannDebias::Generate()
             const uint8_t b0 = (raw[i / 8] >> (i % 8)) & 1u;
             const uint8_t b1 = (raw[(i + 1) / 8] >> ((i + 1) % 8)) & 1u;
 
-            if (b0 == b1) continue;  // одинаковые — отброс
+            if (b0 == b1) continue;  // identical — discard
 
             if (b0)
             {

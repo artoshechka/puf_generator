@@ -1,6 +1,6 @@
 /// @file hamming_authenticator.hpp
 /// @author Artemenko Anton
-/// @brief Аутентификатор на основе расстояния Хэмминга
+/// @brief Authenticator based on Hamming distance
 
 #ifndef GUID_F712E89C_625A_4C4E_AC3B_29B337659DF0
 #define GUID_F712E89C_625A_4C4E_AC3B_29B337659DF0
@@ -11,32 +11,32 @@
 namespace puf
 {
 
-/// @brief Сравнивает отпечатки по расстоянию Хэмминга.
-/// Принимает кандидата подлинным, если доля отличающихся битов
-/// не превышает порог (по умолчанию 10%).
+/// @brief Compares fingerprints by Hamming distance.
+/// Accepts a candidate as authentic if the fraction of differing bits
+/// does not exceed the threshold (default 10%).
 class HammingAuthenticator final : public IAuthenticator
 {
    public:
-    /// @param[in] reference    Эталонный отпечаток (зарегистрированный)
-    /// @param[in] thresholdPct Максимально допустимый intra-HD в процентах [0..100]
+    /// @param[in] reference    Reference fingerprint (enrolled)
+    /// @param[in] thresholdPct Maximum allowable intra-HD in percent [0..100]
     HammingAuthenticator(Fingerprint reference, double thresholdPct = kDefaultThresholdPct);
 
-    /// @brief Сравнивает candidate с эталоном по расстоянию Хэмминга
-    /// @param[in] candidate Отпечаток, предъявленный при аутентификации
-    /// @return true если дробное HD не превышает thresholdPct_/100
+    /// @brief Compares candidate against the reference by Hamming distance
+    /// @param[in] candidate Fingerprint presented during authentication
+    /// @return true if the fractional HD does not exceed thresholdPct_/100
     bool Authenticate(const Fingerprint& candidate) override;
 
-    /// @brief Считает число различающихся бит между двумя отпечатками
-    /// @return Расстояние Хэмминга в битах
+    /// @brief Counts the number of differing bits between two fingerprints
+    /// @return Hamming distance in bits
     static size_t HammingDistance(const Fingerprint& a, const Fingerprint& b);
 
-    /// @brief Нормирует расстояние Хэмминга на длину отпечатка
-    /// @return Дробное расстояние Хэмминга [0.0, 1.0]
+    /// @brief Normalizes the Hamming distance by the fingerprint length
+    /// @return Fractional Hamming distance [0.0, 1.0]
     static double FractionalHD(const Fingerprint& a, const Fingerprint& b);
 
    private:
-    Fingerprint reference_;  ///< Эталонный отпечаток, зарегистрированный при энролменте
-    double thresholdPct_;    ///< Порог приёма в процентах [0..100]
+    Fingerprint reference_;  ///< Reference fingerprint registered during enrollment
+    double thresholdPct_;    ///< Acceptance threshold in percent [0..100]
 };
 
 }  // namespace puf

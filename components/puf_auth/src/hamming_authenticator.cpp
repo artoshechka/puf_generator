@@ -1,6 +1,6 @@
 /// @file hamming_authenticator.cpp
 /// @author Artemenko Anton
-/// @brief Реализация аутентификатора на основе расстояния Хэмминга
+/// @brief Implementation of the Hamming distance authenticator
 
 #include <algorithm>
 #include <bit>

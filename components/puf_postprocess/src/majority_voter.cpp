@@ -1,6 +1,6 @@
 /// @file majority_voter.cpp
 /// @author Artemenko Anton
-/// @brief Реализация голосования большинством
+/// @brief Implementation of majority voting
 
 #include <majority_voter.hpp>
 #include <vector>

@@ -1,6 +1,6 @@
 /// @file ipuf_factory.hpp
 /// @author Artemenko Anton
-/// @brief Интерфейс платформо-специфичной фабрики генераторов PUF
+/// @brief Interface for a platform-specific PUF generator factory
 
 #ifndef GUID_44869DE5_11BC_4BC6_ACB6_F935000C3080
 #define GUID_44869DE5_11BC_4BC6_ACB6_F935000C3080
@@ -12,14 +12,14 @@
 namespace puf
 {
 
-/// @brief Фабрика генераторов PUF для конкретной платформы
+/// @brief PUF generator factory for a specific platform
 class IPufFactory
 {
    public:
     virtual ~IPufFactory() = default;
 
-    /// @brief Создаёт Ring Oscillator PUF
-    /// @param[in] bits Длина отпечатка в битах
+    /// @brief Creates a Ring Oscillator PUF
+    /// @param[in] bits Fingerprint length in bits
     virtual std::unique_ptr<IPufGenerator> CreateRoPuf(size_t bits) = 0;
 };
 

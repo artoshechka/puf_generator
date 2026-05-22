@@ -1,6 +1,6 @@
 /// @file i_authenticator.hpp
 /// @author Artemenko Anton
-/// @brief Интерфейс аутентификатора по PUF-отпечатку
+/// @brief Authenticator interface for PUF fingerprint verification
 
 #ifndef GUID_B8E28E8D_57E6_410C_BC71_C50992BD9B1D
 #define GUID_B8E28E8D_57E6_410C_BC71_C50992BD9B1D
@@ -10,15 +10,15 @@
 namespace puf
 {
 
-/// @brief Верификатор отпечатка устройства по эталонному значению
+/// @brief Device fingerprint verifier against a reference value
 class IAuthenticator
 {
    public:
     virtual ~IAuthenticator() = default;
 
-    /// @brief Проверяет подлинность устройства по предъявленному отпечатку
-    /// @param[in] candidate Отпечаток, полученный при аутентификации
-    /// @return true если отпечаток соответствует эталону в пределах порога
+    /// @brief Verifies device authenticity using the presented fingerprint
+    /// @param[in] candidate Fingerprint obtained during authentication
+    /// @return true if the fingerprint matches the reference within the threshold
     virtual bool Authenticate(const Fingerprint& candidate) = 0;
 };
 

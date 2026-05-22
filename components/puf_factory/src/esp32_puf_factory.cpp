@@ -1,6 +1,6 @@
 /// @file esp32_puf_factory.cpp
 /// @author Artemenko Anton
-/// @brief Реализация фабрики PUF для ESP32
+/// @brief PUF factory implementation for ESP32
 
 #include <esp32_puf_factory.hpp>
 #include <ro_oscillator.hpp>
@@ -14,7 +14,7 @@ namespace puf
 namespace
 {
 
-/// @brief Минимальное число осцилляторов для получения не менее bits пар
+/// @brief Minimum number of oscillators required to produce at least bits pairs
 size_t RequiredOscillators(size_t bits)
 {
     size_t n = 2;

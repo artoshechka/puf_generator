@@ -1,6 +1,6 @@
 /// @file ro_oscillator.cpp
 /// @author Artemenko Anton
-/// @brief Реализация Ring Oscillator для ESP32 (Xtensa LX6, ESP-IDF v5.x)
+/// @brief Ring Oscillator implementation for ESP32 (Xtensa LX6, ESP-IDF v5.x)
 
 #include <esp_cpu.h>
 
@@ -10,11 +10,11 @@
 namespace puf
 {
 
-// ─── Осцилляторы ──────────────────────────────────────────────────────────────
+// ─── Oscillators ──────────────────────────────────────────────────────────────
 //
-// volatile sink, инициализированный уникальным id, гарантирует уникальный
-// машинный код каждой функции — компилятор не может их объединить.
-// Разные IRAM-адреса → разное выравнивание по cache-line → вариация счётчиков.
+// A volatile sink initialized with a unique id guarantees unique machine code
+// for each function — the compiler cannot merge them.
+// Different IRAM addresses → different cache-line alignment → counter variation.
 
 #define DEFINE_OSC(id)                                                                             \
     static IRAM_ATTR __attribute__((noinline, optimize("O1"))) uint32_t oscFn##id(uint32_t window) \

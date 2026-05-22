@@ -1,6 +1,6 @@
 /// @file ro_puf_config.hpp
 /// @author Artemenko Anton
-/// @brief Настраиваемые значения по умолчанию для генератора RoPuf
+/// @brief Configurable default values for the RoPuf generator
 
 #ifndef GUID_A1C3F027_8E54_4D1B_B902_FC2D7E4A5019
 #define GUID_A1C3F027_8E54_4D1B_B902_FC2D7E4A5019
@@ -10,10 +10,10 @@
 namespace puf
 {
 
-/// @brief Окно измерения осциллятора по умолчанию в тактах CPU.
+/// @brief Default oscillator measurement window in CPU cycles.
 ///
-/// Большие значения повышают стабильность (меньший intra-HD), но увеличивают
-/// время генерации. 200 000 тактов ≈ 100 мкс при частоте 240 МГц.
+/// Larger values improve stability (lower intra-HD) but increase generation time.
+/// 200 000 cycles ≈ 100 µs at 240 MHz.
 inline constexpr uint32_t kDefaultWindowCycles = 200'000;
 
 }  // namespace puf

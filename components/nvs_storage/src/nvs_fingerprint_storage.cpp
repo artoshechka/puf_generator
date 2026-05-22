@@ -1,6 +1,6 @@
 /// @file nvs_fingerprint_storage.cpp
 /// @author Artemenko Anton
-/// @brief Реализация NVS-хранилища отпечатка для ESP32
+/// @brief NVS fingerprint storage implementation for ESP32
 
 #include <nvs.h>
 #include <nvs_flash.h>

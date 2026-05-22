@@ -1,6 +1,6 @@
 /// @file ro_puf.cpp
 /// @author Artemenko Anton
-/// @brief Реализация Ring Oscillator PUF
+/// @brief Ring Oscillator PUF implementation
 
 #include <cassert>
 #include <ro_puf.hpp>
@@ -32,7 +32,7 @@ Fingerprint RoPuf::Generate()
     Fingerprint fp((bits_ + 7) / 8, 0);
     size_t bitIdx = 0;
 
-    // Попарное сравнение: counts[i] > counts[j] → бит 1, иначе 0
+    // Pairwise comparison: counts[i] > counts[j] → bit 1, otherwise 0
     for (size_t i = 0; i < n && bitIdx < bits_; ++i)
     {
         for (size_t j = i + 1; j < n && bitIdx < bits_; ++j)

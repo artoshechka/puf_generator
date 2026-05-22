@@ -1,6 +1,6 @@
 /// @file puf_metrics.cpp
 /// @author Artemenko Anton
-/// @brief Реализация метрик оценки PUF
+/// @brief Implementation of PUF evaluation metrics
 
 #include <algorithm>
 #include <bit>

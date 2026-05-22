@@ -1,6 +1,6 @@
 /// @file nvs_fingerprint_storage.hpp
 /// @author Artemenko Anton
-/// @brief Хранение отпечатка в ESP32 NVS (Non-Volatile Storage)
+/// @brief Fingerprint storage in ESP32 NVS (Non-Volatile Storage)
 
 #ifndef GUID_BF695C74_4626_4E5A_8831_62DB13E155CB
 #define GUID_BF695C74_4626_4E5A_8831_62DB13E155CB
@@ -10,30 +10,30 @@
 namespace puf
 {
 
-/// @brief Сохраняет и загружает отпечаток через ESP-IDF NVS API.
-/// Использует пространство имён "puf" и ключ "fingerprint".
-/// Перед первым использованием необходимо инициализировать NVS: nvs_flash_init().
+/// @brief Stores and loads a fingerprint via the ESP-IDF NVS API.
+/// Uses the namespace "puf" and the key "fingerprint".
+/// NVS must be initialized before first use: nvs_flash_init().
 class NvsFingerprintStorage final : public IFingerprintStorage
 {
    public:
-    /// @brief Сохраняет отпечаток в NVS, перезаписывая предыдущее значение
-    /// @param fp Отпечаток для записи
+    /// @brief Stores the fingerprint in NVS, overwriting any previous value
+    /// @param fp Fingerprint to write
     void Store(const Fingerprint& fp) override;
 
-    /// @brief Загружает отпечаток из NVS
-    /// @return Ранее сохранённый отпечаток
-    /// @throws std::runtime_error если ключ не найден или NVS недоступен
+    /// @brief Loads the fingerprint from NVS
+    /// @return Previously stored fingerprint
+    /// @throws std::runtime_error if the key is not found or NVS is unavailable
     Fingerprint Load() override;
 
-    /// @return true если ключ "fingerprint" присутствует в NVS-пространстве "puf"
+    /// @return true if the key "fingerprint" is present in the NVS namespace "puf"
     bool HasFingerprint() const override;
 
-    /// @brief Удаляет ключ "fingerprint" из NVS-пространства "puf"
+    /// @brief Deletes the key "fingerprint" from the NVS namespace "puf"
     void Delete() override;
 
    private:
-    static constexpr const char* kNvsNamespace = "puf";    ///< NVS-пространство имён
-    static constexpr const char* kNvsKey = "fingerprint";  ///< Ключ хранения отпечатка
+    static constexpr const char* kNvsNamespace = "puf";    ///< NVS namespace
+    static constexpr const char* kNvsKey = "fingerprint";  ///< Fingerprint storage key
 };
 
 }  // namespace puf
