@@ -21,7 +21,7 @@ def run(cmd: str) -> None:
 
 
 def idf(args: str) -> None:
-    full = f". {EXPORT_SH} > /dev/null 2>&1 && {IDF_PY} {args}"
+    full = f". {EXPORT_SH} > /dev/null 2>&1 && python3 {IDF_PY} {args}"
     result = subprocess.run(full, shell=True, executable="/bin/bash")
     if result.returncode != 0:
         sys.exit(result.returncode)
