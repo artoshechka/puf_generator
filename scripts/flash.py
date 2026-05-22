@@ -80,13 +80,16 @@ def main() -> None:
     parser.add_argument("--port", help="Serial port (e.g. /dev/cu.usbmodem101)")
     parser.add_argument("--build-only", action="store_true", help="Build without flashing")
     parser.add_argument("--monitor-only", action="store_true", help="Open monitor without building or flashing")
+    parser.add_argument("--menuconfig", action="store_true", help="Open interactive firmware configuration menu")
     args = parser.parse_args()
 
     ensure_idf()
 
     os.chdir(PROJECT_ROOT)
 
-    if args.monitor_only:
+    if args.menuconfig:
+        idf("menuconfig")
+    elif args.monitor_only:
         port = args.port or detect_port()
         idf(f"-p {port} monitor")
     elif args.build_only:

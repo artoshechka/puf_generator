@@ -63,11 +63,16 @@ docker-logs:
 
 ## Run host-side unit tests via Conan + CMake
 test:
+	conan profile detect --name host --exist-ok
 	conan install . --output-folder=build_host --build=missing -pr=profiles/host
 	cmake -B build_host -DCMAKE_TOOLCHAIN_FILE=build_host/conan_toolchain.cmake \
 	      -DPUF_BUILD_TESTS=ON
 	cmake --build build_host
 	ctest --test-dir build_host --output-on-failure
+
+## Open firmware configuration menu
+menuconfig:
+	$(PYTHON) scripts/flash.py --menuconfig
 
 # ── Board utilities ───────────────────────────────────────────────────────────
 

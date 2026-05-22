@@ -13,7 +13,7 @@
 ### Шаг 1 — Запустить сервер
 
 ```bash
-ADMIN_TOKEN=secret docker compose up --build
+ADMIN_TOKEN=secret docker compose up --build -d
 ```
 
 Сервер поднимается на `http://localhost:8080`. PostgreSQL стартует автоматически.
@@ -25,17 +25,21 @@ ADMIN_TOKEN=secret docker compose up --build
 Подключи ESP32 по USB, затем:
 
 ```bash
-python3 scripts/flash.py
+make flash
 ```
 
 Скрипт установит ESP-IDF (если нужно), соберёт прошивку и откроет монитор.  
-В выводе появится строка — это и есть PUF-отпечаток устройства:
+Первым делом плата выведет PUF-отпечаток — голая hex-строка, без каких-либо префиксов:
 
 ```
-I (312) puf: a3f1c8b2e04d7a91f563...
+4040c0b0b01006066261210b0b2d2c5c58080000040c0b612016b2d0c28500c0
 ```
 
-Скопируй hex-строку — она потребуется на следующих шагах.
+Чтобы захватить его в переменную для дальнейшего использования (плата должна быть уже прошита):
+
+```bash
+PUF=$(make puf)
+```
 
 ---
 
@@ -44,10 +48,12 @@ I (312) puf: a3f1c8b2e04d7a91f563...
 Выполняется **один раз** — при первом подключении устройства или на производстве.
 
 ```bash
+PUF=$(make puf)
+
 curl -X POST http://localhost:8080/devices/esp32-001/enroll \
   -H "Authorization: Bearer secret" \
   -H "Content-Type: application/json" \
-  -d '{"fingerprint": "a3f1c8b2e04d7a91f563..."}'
+  -d "{\"fingerprint\": \"$PUF\"}"
 ```
 
 Ответ:
@@ -62,26 +68,28 @@ curl -X POST http://localhost:8080/devices/esp32-001/enroll \
 
 ### Шаг 4 — Верифицировать устройство
 
-В поле выполняется при каждом подключении устройства. Устройство снимает новый отпечаток и отправляет его:
+При каждом подключении устройства — снять свежий отпечаток и отправить на сервер:
 
 ```bash
+PUF=$(make puf)
+
 curl -X POST http://localhost:8080/devices/esp32-001/verify \
-  -H "Authorization: PUF a3f1c8b2e04d7a91f563..."
+  -H "Authorization: PUF $PUF"
 ```
 
-Успешная верификация (отпечаток совпадает с допуском ≤ 10% по Хэммингу):
+Успешная верификация (HD ≤ порога):
 
 ```json
 {"ok": true, "hamming_pct": 3.9, "threshold_pct": 10.0}
 ```
 
-Неуспешная (отпечаток слишком далёк от эталона — чужое или повреждённое устройство):
+Неуспешная (чужое или повреждённое устройство):
 
 ```json
 {"ok": false, "hamming_pct": 47.2, "threshold_pct": 10.0}
 ```
 
-HTTP-статус в случае отказа — `401 Unauthorized`.
+HTTP-статус при отказе — `401 Unauthorized`.
 
 ---
 
@@ -95,6 +103,9 @@ curl http://localhost:8080/devices \
 # Удалить устройство
 curl -X DELETE http://localhost:8080/devices/esp32-001 \
   -H "Authorization: Bearer secret"
+
+# Текущие метрики сервера
+curl http://localhost:8080/metrics
 ```
 
 ---
@@ -237,6 +248,7 @@ classDiagram
 | `puf_auth` | `puf_core` | Аутентификация по расстоянию Хэмминга с настраиваемым порогом |
 | `puf_postprocess` | `puf_core` | Декораторы `VonNeumannDebias` и `MajorityVoter` для повышения качества |
 | `puf_metrics` | `puf_core` | Метрики оценки PUF: intra-HD, inter-HD, uniformity |
+| `puf_log` | `esp_common`, `freertos` | Кольцевой буфер логов; дамп по UART-команде `LOGS` |
 
 Новый тип устройства — новая фабрика. Новый тип осциллятора — новый компонент рядом с `ro_oscillator`. Постобработка подключается декораторами без изменения генератора.
 
@@ -294,10 +306,14 @@ puf_generator/
 │   │   └── src/
 │   │       ├── von_neumann_debias.cpp
 │   │       └── majority_voter.cpp
-│   └── puf_metrics/
-│       ├── puf_metrics.hpp
+│   ├── puf_metrics/
+│   │   ├── puf_metrics.hpp
+│   │   ├── CMakeLists.txt
+│   │   └── src/puf_metrics.cpp
+│   └── puf_log/                   # кольцевой буфер логов + UART-команды
+│       ├── puf_log.hpp
 │       ├── CMakeLists.txt
-│       └── src/puf_metrics.cpp
+│       └── src/puf_log.cpp
 ├── main/
 │   ├── main.cpp
 │   ├── Kconfig.projbuild
@@ -343,7 +359,9 @@ cp .env.example .env   # настроить пути и токены под св
 | `make firmware` | Собрать прошивку ESP32 |
 | `make flash` | Прошить плату и открыть монитор |
 | `make monitor` | Открыть монитор без перепрошивки |
+| `make menuconfig` | Открыть меню конфигурации прошивки |
 | `make server` | Собрать Go-бинарь локально |
+| `make server-run` | Запустить сервер локально (нужен `DATABASE_URL` в `.env`) |
 | `make docker-up` | Запустить сервер + PostgreSQL в Docker |
 | `make docker-down` | Остановить контейнеры |
 | `make docker-clean` | Остановить контейнеры и удалить БД |
@@ -502,6 +520,7 @@ go run .
 POST /devices/{id}/enroll
 Authorization: Bearer <ADMIN_TOKEN>
 {"fingerprint": "a1b2c3..."}
+→ {"device_id": "esp32-001", "status": "enrolled"}
 
 # Верификация устройства по PUF-отпечатку
 POST /devices/{id}/verify
@@ -515,6 +534,15 @@ Authorization: Bearer <ADMIN_TOKEN>
 # Удаление устройства (admin)
 DELETE /devices/{id}
 Authorization: Bearer <ADMIN_TOKEN>
+
+# Метрики сервера (открытый эндпоинт)
+GET /metrics
+→ {"enroll_total": 3, "verify_ok": 12, "verify_fail": 2,
+   "verify_not_found": 1, "verify_avg_hamming_pct": 3.8}
+
+# Статус сервера (используется Docker healthcheck)
+GET /health
+→ {"status": "ok"}
 ```
 
 ### Механизм аутентификации

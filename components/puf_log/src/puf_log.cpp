@@ -50,6 +50,11 @@ void ringAppend(const char* s, size_t len)
 /// Обработчик, который пишет в буфер И в оригинальный UART.
 int pufVprintf(const char* fmt, va_list args)
 {
+    // va_copy должен быть до vsnprintf: после первого прохода args становится
+    // неопределённым, передавать его повторно — UB.
+    va_list copy;
+    va_copy(copy, args);
+
     char tmp[256];
     int n = vsnprintf(tmp, sizeof(tmp), fmt, args);
     if (n > 0)
@@ -57,12 +62,9 @@ int pufVprintf(const char* fmt, va_list args)
 
     // Продолжаем выводить в UART чтобы монитор работал как обычно.
     if (gOrigVprintf)
-    {
-        va_list copy;
-        va_copy(copy, args);
         gOrigVprintf(fmt, copy);
-        va_end(copy);
-    }
+
+    va_end(copy);
     return n;
 }
 
