@@ -78,7 +78,7 @@ menuconfig:
 
 ## Read PUF fingerprint from the connected board (stdout only)
 puf:
-	$(PYTHON) scripts/read_puf.py $(PORT_ARG)
+	@$(PYTHON) scripts/read_puf.py $(PORT_ARG)
 
 ## Fetch accumulated log buffer from the board
 board-logs:
