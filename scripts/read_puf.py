@@ -14,7 +14,7 @@ import argparse
 import glob
 import re
 import sys
-import time
+import time  # monotonic() для deadline
 
 # Minimum fingerprint length in hex chars (64-bit = 16 chars).
 # ESP32 default is 256-bit = 64 chars.
@@ -51,12 +51,14 @@ def read_fingerprint(port: str, baud: int, timeout: float, count: int) -> list[s
     fingerprints: list[str] = []
 
     with serial.Serial(port, baud, timeout=1) as ser:
-        # Flush stale boot output before waiting for a fresh fingerprint.
-        # The device may already be running — send a reset signal via DTR.
-        ser.setDTR(False)
-        time.sleep(0.1)
-        ser.setDTR(True)
         ser.reset_input_buffer()
+
+        # Send PUF command — firmware responds with a fresh fingerprint.
+        # This is more reliable than DTR reset which doesn't work on ESP32-C3
+        # native USB (USB-Serial/JTAG doesn't wire DTR to the EN pin).
+        for _ in range(count):
+            ser.write(b"PUF\n")
+            ser.flush()
 
         eprint(f"Waiting for fingerprint (timeout {timeout:.0f}s) ...")
         deadline = time.monotonic() + timeout
