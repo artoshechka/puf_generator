@@ -11,7 +11,7 @@ namespace puf
 RoPuf::RoPuf(std::vector<std::unique_ptr<IOscillator>> oscillators, size_t bits, uint32_t windowCycles)
     : oscillators_(std::move(oscillators)), bits_(bits), window_(windowCycles)
 {
-    assert(oscillators_.size() >= 2);
+    assert(oscillators_.size() >= 2U);
 }
 
 size_t RoPuf::FingerprintBits() const
@@ -29,17 +29,16 @@ Fingerprint RoPuf::Generate()
         counts[i] = oscillators_[i]->Measure(window_);
     }
 
-    Fingerprint fp((bits_ + 7) / 8, 0);
+    Fingerprint fp((bits_ + 7U) / 8U, 0U);
     size_t bitIdx = 0;
 
-    // Pairwise comparison: counts[i] > counts[j] → bit 1, otherwise 0
     for (size_t i = 0; i < n && bitIdx < bits_; ++i)
     {
-        for (size_t j = i + 1; j < n && bitIdx < bits_; ++j)
+        for (size_t j = i + 1U; j < n && bitIdx < bits_; ++j)
         {
             if (counts[i] > counts[j])
             {
-                fp[bitIdx / 8] |= static_cast<uint8_t>(1u << (bitIdx % 8));
+                fp[bitIdx / 8U] |= static_cast<uint8_t>(1U << (bitIdx % 8U));
             }
             ++bitIdx;
         }
