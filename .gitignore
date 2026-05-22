@@ -9,7 +9,7 @@ build_host/
 *.a
 
 # Doxygen output
-docs/
+docs/html/
 
 # ESP-IDF generated configs (runtime only; sdkconfig.defaults is tracked)
 sdkconfig
