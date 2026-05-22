@@ -64,7 +64,15 @@ def read_fingerprint(port: str, baud: int, timeout: float, count: int) -> list[s
         deadline = time.monotonic() + timeout
 
         while time.monotonic() < deadline and len(fingerprints) < count:
-            line = ser.readline().decode("ascii", errors="ignore").strip()
+            try:
+                raw = ser.readline()
+            except Exception as e:
+                # ESP32-C3 native USB briefly disconnects on certain operations.
+                eprint(f"  serial error: {e}, retrying ...")
+                time.sleep(0.5)
+                ser.reset_input_buffer()
+                continue
+            line = raw.decode("ascii", errors="ignore").strip()
             if not line:
                 continue
             if _HEX_RE.match(line):
