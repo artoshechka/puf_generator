@@ -1,7 +1,8 @@
 /// @file majority_voter.cpp
 /// @author Artemenko Anton
-/// @brief Implementation of majority voting
+/// @brief Реализация мажоритарного голосования
 
+#include <cassert>
 #include <majority_voter.hpp>
 #include <vector>
 
@@ -11,6 +12,7 @@ namespace puf
 MajorityVoter::MajorityVoter(std::unique_ptr<IPufGenerator> inner, size_t rounds)
     : inner_(std::move(inner)), rounds_(rounds)
 {
+    assert(rounds_ % 2U == 1U);
 }
 
 size_t MajorityVoter::FingerprintBits() const

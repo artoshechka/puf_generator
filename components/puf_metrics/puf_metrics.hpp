@@ -1,6 +1,6 @@
 /// @file puf_metrics.hpp
 /// @author Artemenko Anton
-/// @brief PUF fingerprint quality evaluation metrics
+/// @brief Метрики оценки качества отпечатка PUF
 
 #ifndef GUID_D68368E0_2ED9_49ED_BA95_B2099115DCDD
 #define GUID_D68368E0_2ED9_49ED_BA95_B2099115DCDD
@@ -11,36 +11,36 @@
 namespace puf::metrics
 {
 
-/// @brief Counts the number of differing bits between two fingerprints
-/// @param[in] a First fingerprint
-/// @param[in] b Second fingerprint
-/// @return Hamming distance in bits
+/// @brief Подсчитывает количество различающихся битов между двумя отпечатками
+/// @param[in] a Первый отпечаток
+/// @param[in] b Второй отпечаток
+/// @return Расстояние Хэмминга в битах
 size_t HammingDistance(const Fingerprint& a, const Fingerprint& b);
 
-/// @brief Normalizes Hamming distance by fingerprint length
-/// @param[in] a First fingerprint
-/// @param[in] b Second fingerprint
-/// @return Fractional Hamming distance [0.0, 1.0]
+/// @brief Нормализует расстояние Хэмминга по длине отпечатка
+/// @param[in] a Первый отпечаток
+/// @param[in] b Второй отпечаток
+/// @return Относительное расстояние Хэмминга [0.0, 1.0]
 double FractionalHD(const Fingerprint& a, const Fingerprint& b);
 
-/// @brief Intra-device HD: average HD between repeated measurements of one device.
-/// Ideal value: 0.0 (full stability). Acceptable: < 0.05.
-/// @param[in] samples Set of measurements from one device (minimum 2)
-/// @return Average fractional HD across all measurement pairs
-/// @throws std::invalid_argument if samples contains fewer than 2 elements
+/// @brief Внутреннее расстояние Хэмминга: среднее расстояние между повторными измерениями одного устройства.
+/// Идеальное значение: 0.0 (полная стабильность). Допустимое: < 0.05.
+/// @param[in] samples Набор измерений с одного устройства (минимум 2)
+/// @return Среднее относительное расстояние Хэмминга по всем парам измерений
+/// @throws std::invalid_argument если samples содержит менее 2 элементов
 double IntraHD(const std::vector<Fingerprint>& samples);
 
-/// @brief Inter-device HD: average HD between fingerprints of different devices.
-/// Ideal value: 0.5 (maximum distinctiveness).
-/// @param[in] deviceFingerprints One fingerprint per device (minimum 2)
-/// @return Average fractional HD across all device pairs
-/// @throws std::invalid_argument if deviceFingerprints contains fewer than 2 elements
+/// @brief Межустройственное расстояние Хэмминга: среднее расстояние между отпечатками разных устройств.
+/// Идеальное значение: 0.5 (максимальная различимость).
+/// @param[in] deviceFingerprints По одному отпечатку на устройство (минимум 2)
+/// @return Среднее относительное расстояние Хэмминга по всем парам устройств
+/// @throws std::invalid_argument если deviceFingerprints содержит менее 2 элементов
 double InterHD(const std::vector<Fingerprint>& deviceFingerprints);
 
-/// @brief Fraction of bits equal to 1 — measure of distribution uniformity.
-/// Ideal value: 0.5.
-/// @param[in] fp Fingerprint to analyze
-/// @return Fraction of set bits [0.0, 1.0]
+/// @brief Доля битов, равных 1 — мера равномерности распределения.
+/// Идеальное значение: 0.5.
+/// @param[in] fp Анализируемый отпечаток
+/// @return Доля установленных битов [0.0, 1.0]
 double Uniformity(const Fingerprint& fp);
 
 }  // namespace puf::metrics

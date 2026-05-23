@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Read PUF fingerprint from ESP32 over serial and print it to stdout.
 
-Stdout receives only the raw hex fingerprint — suitable for piping:
+Stdout receives only raw hex fingerprints — suitable for piping:
 
     PUF=$(python3 scripts/read_puf.py)
     curl -X POST http://localhost:8080/devices/esp32-001/verify \\
          -H "Authorization: PUF $PUF"
 
 All status messages go to stderr so they do not pollute the captured output.
+When --count > 1, stdout contains multiple lines.
 """
 
 import argparse
@@ -93,6 +94,8 @@ def main() -> None:
     args = parser.parse_args()
 
     port = args.port or detect_port()
+    if args.count > 1:
+        eprint("Multiple fingerprints requested; stdout will be multi-line.")
     fingerprints = read_fingerprint(port, args.baud, args.timeout, args.count)
 
     if not fingerprints:

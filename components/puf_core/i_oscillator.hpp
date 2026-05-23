@@ -1,6 +1,6 @@
 /// @file i_oscillator.hpp
 /// @author Artemenko Anton
-/// @brief PUF oscillator interface
+/// @brief Интерфейс осциллятора PUF
 
 #ifndef GUID_2D4A480D_DFF3_430C_AFBB_13695AC0C844
 #define GUID_2D4A480D_DFF3_430C_AFBB_13695AC0C844
@@ -10,14 +10,14 @@
 namespace puf
 {
 
-/// @brief Single oscillator — measures iteration count over a given cycle window
+/// @brief Одиночный осциллятор — измеряет количество итераций за заданное окно тактов
 class IOscillator
 {
    public:
     virtual ~IOscillator() = default;
 
-    /// @param[in] windowCycles Window duration in CPU cycles
-    /// @return Number of iterations over windowCycles cycles
+    /// @param[in] windowCycles Длительность окна в тактах CPU
+    /// @return Количество итераций за windowCycles тактов
     virtual uint32_t Measure(uint32_t windowCycles) = 0;
 };
 

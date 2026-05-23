@@ -19,6 +19,11 @@ class Esp32PufFactory final : public IPufFactory
     /// @param[in] bits Desired fingerprint length in bits (≤ N*(N-1)/2, N — oscillators)
     /// @return Fully configured fingerprint generator
     std::unique_ptr<IPufGenerator> CreateRoPuf(size_t bits) override;
+
+    /// @brief Создаёт SramPuf на основе буфера в секции .noinit (DRAM)
+    /// @param[in] bits Желаемая длина отпечатка в битах (<= kDefaultSramPufBytes * 8)
+    /// @return Полностью настроенный генератор отпечатков
+    std::unique_ptr<IPufGenerator> CreateSramPuf(size_t bits) override;
 };
 
 }  // namespace puf

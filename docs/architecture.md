@@ -12,6 +12,11 @@ classDiagram
             +Generate() Fingerprint
             +FingerprintBits() size_t
         }
+        class PufType {
+            <<enumeration>>
+            Ro
+            Sram
+        }
     }
 
     namespace ro_oscillator {
@@ -34,13 +39,27 @@ classDiagram
         }
     }
 
+    namespace sram_puf {
+        class SramPuf {
+            -base_ uint8_t*
+            -byteCount_ size_t
+            -bits_ size_t
+            +SramPuf(base, byteCount, bits)
+            +Generate() Fingerprint
+            +FingerprintBits() size_t
+        }
+    }
+
     namespace puf_factory {
         class IPufFactory {
             <<interface>>
+            +Create(type PufType, bits size_t) unique_ptr~IPufGenerator~
             +CreateRoPuf(bits size_t) unique_ptr~IPufGenerator~
+            +CreateSramPuf(bits size_t) unique_ptr~IPufGenerator~
         }
         class Esp32PufFactory {
             +CreateRoPuf(bits size_t) unique_ptr~IPufGenerator~
+            +CreateSramPuf(bits size_t) unique_ptr~IPufGenerator~
         }
     }
 
@@ -105,6 +124,7 @@ classDiagram
 
     IOscillator <|.. RoOscillator
     IPufGenerator <|.. RoPuf
+    IPufGenerator <|.. SramPuf
     IPufGenerator <|.. VonNeumannDebias
     IPufGenerator <|.. MajorityVoter
     IPufFactory <|.. Esp32PufFactory
@@ -116,6 +136,7 @@ classDiagram
     MajorityVoter o-- IPufGenerator
     Esp32PufFactory ..> RoOscillator : creates
     Esp32PufFactory ..> RoPuf : creates
+    Esp32PufFactory ..> SramPuf : creates
 ```
 
 ## Компоненты
@@ -125,11 +146,12 @@ classDiagram
 | `puf_core` | — | Интерфейсы `IOscillator`, `IPufGenerator`, тип `Fingerprint` |
 | `ro_oscillator` | `puf_core` | 32 IRAM-осциллятора для ESP32 (Xtensa LX6) |
 | `ro_puf` | `puf_core` | Генератор отпечатка попарным сравнением счётчиков; платформонезависим |
-| `puf_factory` | `puf_core`, `ro_oscillator`, `ro_puf` | Интерфейс `IPufFactory` и реализация `Esp32PufFactory` |
+| `sram_puf` | `puf_core` | Генератор отпечатка по начальному состоянию SRAM; платформонезависим |
+| `puf_factory` | `puf_core`, `ro_oscillator`, `ro_puf`, `sram_puf` | Интерфейс `IPufFactory` и реализация `Esp32PufFactory` |
 | `nvs_storage` | `puf_core` | Хранение эталонного отпечатка в ESP32 NVS |
 | `puf_auth` | `puf_core` | Аутентификация по расстоянию Хэмминга с настраиваемым порогом |
 | `puf_postprocess` | `puf_core` | Декораторы `VonNeumannDebias` и `MajorityVoter` для повышения качества |
 | `puf_metrics` | `puf_core` | Метрики оценки PUF: intra-HD, inter-HD, uniformity |
 | `puf_log` | `esp_common`, `freertos` | Кольцевой буфер логов; дамп по UART-команде `LOGS` |
 
-Новый тип устройства — новая фабрика. Новый тип осциллятора — новый компонент рядом с `ro_oscillator`. Постобработка подключается декораторами без изменения генератора.
+Новый тип устройства — новая фабрика. Новый тип осциллятора — новый компонент рядом с `ro_oscillator`. Новый источник энтропии — новый компонент рядом с `ro_puf`/`sram_puf`, метод `Create*` в `IPufFactory`. Постобработка подключается декораторами без изменения генератора.

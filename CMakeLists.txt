@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-if(DEFINED ENV{IDF_PATH})
+if(DEFINED ENV{IDF_PATH} AND NOT "$ENV{IDF_PATH}" STREQUAL "")
     set(EXTRA_COMPONENT_DIRS components)
     include($ENV{IDF_PATH}/tools/cmake/project.cmake)
     project(puf_generator)
@@ -18,6 +18,7 @@ else()
 
     add_subdirectory(components/puf_core)
     add_subdirectory(components/ro_puf)
+    add_subdirectory(components/sram_puf)
     add_subdirectory(components/puf_postprocess)
     add_subdirectory(components/puf_metrics)
     add_subdirectory(components/puf_auth)

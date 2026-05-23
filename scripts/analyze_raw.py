@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Collect and analyze raw oscillator counts from the board.
+"""Сбор и анализ сырых счётчиков осцилляторов с платы.
 
-Usage:
+Запуск:
     python3 scripts/analyze_raw.py [--port PORT] [--runs N]
 
-Sends the RAW command N times and prints:
-- Per-oscillator mean and std deviation across runs
-- Pairs with smallest count difference (most unstable bits)
-- Predicted stable vs unstable bit count
+Скрипт отправляет команду RAW N раз и выводит:
+- Среднее значение и стандартное отклонение по каждому осциллятору за все запуски.
+- Пары с минимальной разницей счётчиков (наиболее нестабильные биты).
+- Прогноз количества стабильных и нестабильных битов.
 """
 
 import argparse
@@ -20,10 +20,12 @@ _RUN_RE = re.compile(r"^RUN \d+: (.+)$")
 
 
 def eprint(*a, **kw):
+    """Выводит сообщение в стандартный поток ошибок."""
     print(*a, file=sys.stderr, **kw)
 
 
 def detect_port() -> str:
+    """Автоматически определяет последовательный порт подключённой платы ESP32."""
     candidates = (
         glob.glob("/dev/cu.usbmodem*")
         + glob.glob("/dev/cu.SLAB_USBtoUART*")
@@ -36,6 +38,7 @@ def detect_port() -> str:
 
 
 def collect(port: str, baud: int, iterations: int) -> list[list[int]]:
+    """Собирает счётчики осцилляторов с платы за заданное число итераций."""
     try:
         import serial
     except ImportError:
@@ -67,13 +70,18 @@ def collect(port: str, baud: int, iterations: int) -> list[list[int]]:
                 if inside:
                     m = _RUN_RE.match(line)
                     if m:
-                        counts = list(map(int, m.group(1).split()))
+                        try:
+                            counts = list(map(int, m.group(1).split()))
+                        except ValueError:
+                            eprint(f"  invalid RUN line: {line}")
+                            continue
                         all_runs.append(counts)
 
     return all_runs
 
 
 def analyze(all_runs: list[list[int]]) -> None:
+    """Анализирует собранные счётчики и выводит статистику стабильности битов."""
     if not all_runs:
         sys.exit("No data collected.")
 
@@ -81,7 +89,7 @@ def analyze(all_runs: list[list[int]]) -> None:
     n_runs = len(all_runs)
     print(f"Oscillators: {n_osc}, total run snapshots: {n_runs}\n")
 
-    # Per-oscillator stats
+    # Статистика по каждому осциллятору
     means = []
     stds = []
     for i in range(n_osc):
@@ -96,8 +104,8 @@ def analyze(all_runs: list[list[int]]) -> None:
         cv = (stds[i] / means[i] * 100) if means[i] else 0
         print(f"  osc[{i:02d}]  {means[i]:10.1f}  {stds[i]:8.2f}  {cv:6.3f}%")
 
-    # Pairwise margin analysis (first run snapshot per iteration)
-    # Use means to compute expected bit stability
+    # Анализ запаса по парам осцилляторов (первый снимок на итерацию).
+    # Используем средние значения для оценки ожидаемой стабильности бита.
     print("\nMost unstable pairs (smallest |mean[i] - mean[j]|):")
     pairs = []
     for i in range(n_osc):
@@ -108,17 +116,21 @@ def analyze(all_runs: list[list[int]]) -> None:
 
     unstable = sum(1 for d, _, _ in pairs if d < 5)
     stable = len(pairs) - unstable
-    print(f"  margin < 5 counts  → {unstable} unstable pairs  ({unstable}/{len(pairs)} = {unstable/len(pairs)*100:.1f}%)")
+    print(
+        f"  margin < 5 counts  → {unstable} unstable pair comparisons  "
+        f"({unstable}/{len(pairs)} = {unstable/len(pairs)*100:.1f}%)"
+    )
     print(f"  margin ≥ 5 counts  → {stable} stable pairs")
     print()
     for diff, i, j in pairs[:20]:
-        # Flip rate: fraction of run snapshots where osc[i] > osc[j] flips
+        # Частота переключений: доля снимков, в которых меняется знак сравнения osc[i] > osc[j].
         bits = [(r[i] > r[j]) for r in all_runs]
         flips = sum(1 for a, b in zip(bits, bits[1:]) if a != b)
         print(f"  [{i:02d},{j:02d}]  margin={diff:8.1f}  flip_rate={flips}/{n_runs-1}")
 
 
 def main():
+    """Разбирает аргументы командной строки и запускает сбор и анализ данных."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", help="Serial port (auto-detected if omitted)")
     parser.add_argument("--baud", type=int, default=115200)

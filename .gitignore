@@ -21,3 +21,6 @@ server/puf-server.exe
 
 # Local environment overrides
 .env
+
+# CMake user presets
+CMakeUserPresets.json

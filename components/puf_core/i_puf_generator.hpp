@@ -1,6 +1,6 @@
 /// @file i_puf_generator.hpp
 /// @author Artemenko Anton
-/// @brief Hardware identifier generator interface
+/// @brief Интерфейс генератора аппаратного идентификатора
 
 #ifndef GUID_84347C5B_5509_423B_8CAA_92CF9514EFD4
 #define GUID_84347C5B_5509_423B_8CAA_92CF9514EFD4
@@ -11,16 +11,16 @@
 namespace puf
 {
 
-/// @brief Device fingerprint generator
+/// @brief Генератор отпечатка устройства
 class IPufGenerator
 {
    public:
     virtual ~IPufGenerator() = default;
 
-    /// @brief Generates the device fingerprint
+    /// @brief Генерирует отпечаток устройства
     virtual Fingerprint Generate() = 0;
 
-    /// @return Fingerprint length in bits
+    /// @return Длина отпечатка в битах
     virtual size_t FingerprintBits() const = 0;
 };
 

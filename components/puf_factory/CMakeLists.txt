@@ -1,6 +1,6 @@
 idf_component_register(
     SRCS "src/esp32_puf_factory.cpp"
     INCLUDE_DIRS "."
-    REQUIRES puf_core ro_oscillator ro_puf
+    REQUIRES puf_core ro_oscillator ro_puf sram_puf
 )
 target_compile_options(${COMPONENT_LIB} PRIVATE -fexceptions)

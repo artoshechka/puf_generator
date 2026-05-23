@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Setup ESP-IDF and flash puf_generator to an ESP32."""
+"""Установка ESP-IDF и прошивка puf_generator на плату ESP32."""
 
 import argparse
 import glob
@@ -7,20 +7,24 @@ import os
 import subprocess
 import sys
 
-IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH", "~/esp/esp-idf"))
-IDF_TAG = os.getenv("IDF_TAG", "v5.4.1")
+# ВНИМАНИЕ: IDF_PATH считывается на этапе импорта модуля.
+# Установите переменную окружения до запуска скрипта.
+IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH") or "~/esp/esp-idf")
+IDF_TAG = os.getenv("IDF_TAG") or "v5.4.1"
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IDF_PY = os.path.join(IDF_PATH, "tools", "idf.py")
 ESPRESSIF_DIR = os.path.expanduser("~/.espressif")
 
 
-def run(cmd: str) -> None:
-    result = subprocess.run(cmd, shell=True)
+def run(args: list[str]) -> None:
+    """Запускает внешнюю команду и завершает работу при ненулевом коде возврата."""
+    result = subprocess.run(args)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
 
 def find_venv() -> str:
+    """Находит виртуальное окружение Python, установленное ESP-IDF."""
     pattern = os.path.join(ESPRESSIF_DIR, "python_env", "*/bin/python3")
     candidates = glob.glob(pattern)
     if not candidates:
@@ -29,6 +33,7 @@ def find_venv() -> str:
 
 
 def build_env(venv: str) -> dict:
+    """Формирует переменные окружения для запуска инструментов ESP-IDF."""
     env = os.environ.copy()
     env["IDF_PATH"] = IDF_PATH
     env["IDF_PYTHON_ENV_PATH"] = venv
@@ -44,29 +49,39 @@ def build_env(venv: str) -> dict:
     return env
 
 
-def idf(args: str) -> None:
+def idf(args: list[str]) -> None:
+    """Запускает idf.py с переданными аргументами в подготовленном окружении."""
     venv = find_venv()
     python = os.path.join(venv, "bin", "python")
     env = build_env(venv)
-    result = subprocess.run([python, IDF_PY] + args.split(), cwd=PROJECT_ROOT, env=env)
+    result = subprocess.run([python, IDF_PY] + args, cwd=PROJECT_ROOT, env=env)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
 
 def ensure_idf() -> None:
+    """Клонирует ESP-IDF и запускает установщик при их отсутствии."""
     if not os.path.isdir(IDF_PATH):
         print(f"Cloning ESP-IDF {IDF_TAG} ...")
-        run(
-            f"git clone --recursive --depth 1 --branch {IDF_TAG} "
-            f"https://github.com/espressif/esp-idf.git {IDF_PATH}"
-        )
+        run([
+            "git",
+            "clone",
+            "--recursive",
+            "--depth",
+            "1",
+            "--branch",
+            IDF_TAG,
+            "https://github.com/espressif/esp-idf.git",
+            IDF_PATH,
+        ])
 
     if not glob.glob(os.path.join(ESPRESSIF_DIR, "python_env", "*/bin/python3")):
         print("Running ESP-IDF installer ...")
-        run(f"{IDF_PATH}/install.sh esp32")
+        run([os.path.join(IDF_PATH, "install.sh"), "esp32"])
 
 
 def detect_port() -> str:
+    """Автоматически определяет последовательный порт подключённой платы ESP32."""
     candidates = glob.glob("/dev/cu.usbmodem*") + glob.glob("/dev/cu.SLAB_USBtoUART*")
     if not candidates:
         sys.exit("No ESP32 port found. Plug in the device or pass --port manually.")
@@ -76,6 +91,7 @@ def detect_port() -> str:
 
 
 def main() -> None:
+    """Разбирает аргументы командной строки и запускает сборку, прошивку или монитор."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="Serial port (e.g. /dev/cu.usbmodem101)")
     parser.add_argument("--build-only", action="store_true", help="Build without flashing")
@@ -88,17 +104,17 @@ def main() -> None:
     os.chdir(PROJECT_ROOT)
 
     if args.menuconfig:
-        idf("menuconfig")
+        idf(["menuconfig"])
     elif args.monitor_only:
         port = args.port or detect_port()
-        idf(f"-p {port} monitor")
+        idf(["-p", port, "monitor"])
     elif args.build_only:
-        idf("set-target esp32c3")
-        idf("build")
+        idf(["set-target", "esp32c3"])
+        idf(["build"])
     else:
         port = args.port or detect_port()
-        idf("set-target esp32c3")
-        idf(f"-p {port} flash monitor")
+        idf(["set-target", "esp32c3"])
+        idf(["-p", port, "flash", "monitor"])
 
 
 if __name__ == "__main__":

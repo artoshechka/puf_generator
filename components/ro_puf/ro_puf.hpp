@@ -1,6 +1,6 @@
 /// @file ro_puf.hpp
 /// @author Artemenko Anton
-/// @brief Ring Oscillator PUF — identifier generator based on oscillators
+/// @brief Ring Oscillator PUF — генератор идентификатора на основе осцилляторов
 
 #ifndef GUID_B783FA41_CE3D_4FE4_AD53_A9238B2C0BAE
 #define GUID_B783FA41_CE3D_4FE4_AD53_A9238B2C0BAE
@@ -14,29 +14,29 @@
 namespace puf
 {
 
-/// @brief PUF generator based on ring oscillators.
-/// Takes a set of IOscillator instances and produces a fingerprint by pairwise
-/// comparison of counters. Platform-independent — works with any IOscillator implementation.
+/// @brief Генератор PUF на основе кольцевых осцилляторов.
+/// Принимает набор экземпляров IOscillator и формирует отпечаток попарным
+/// сравнением счётчиков. Платформонезависим — работает с любой реализацией IOscillator.
 class RoPuf final : public IPufGenerator
 {
    public:
-    /// @param[in] oscillators  Set of oscillators, minimum 2
-    /// @param[in] bits         Fingerprint length in bits
-    /// @param[in] windowCycles Measurement window duration in cycles
+    /// @param[in] oscillators  Набор осцилляторов, минимум 2
+    /// @param[in] bits         Длина отпечатка в битах
+    /// @param[in] windowCycles Длительность окна измерения в тактах
     RoPuf(std::vector<std::unique_ptr<IOscillator>> oscillators, size_t bits,
           uint32_t windowCycles = kDefaultWindowCycles);
 
-    /// @brief Generates a fingerprint by pairwise comparison of oscillator counters
-    /// @return Byte vector of length ceil(bits/8)
+    /// @brief Генерирует отпечаток попарным сравнением счётчиков осцилляторов
+    /// @return Вектор байт длиной ceil(bits/8)
     Fingerprint Generate() override;
 
-    /// @return Fingerprint length in bits as specified at construction
+    /// @return Длина отпечатка в битах, заданная при конструировании
     size_t FingerprintBits() const override;
 
    private:
-    std::vector<std::unique_ptr<IOscillator>> oscillators_;  ///< Set of oscillators
-    size_t bits_;                                            ///< Fingerprint length in bits
-    uint32_t window_;                                        ///< Measurement window in CPU cycles
+    std::vector<std::unique_ptr<IOscillator>> oscillators_;  ///< Набор осцилляторов
+    size_t bits_;                                            ///< Длина отпечатка в битах
+    uint32_t window_;                                        ///< Окно измерения в тактах CPU
 };
 
 }  // namespace puf
