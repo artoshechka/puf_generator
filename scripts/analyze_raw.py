@@ -67,7 +67,11 @@ def collect(port: str, baud: int, iterations: int) -> list[list[int]]:
                 if inside:
                     m = _RUN_RE.match(line)
                     if m:
-                        counts = list(map(int, m.group(1).split()))
+                        try:
+                            counts = list(map(int, m.group(1).split()))
+                        except ValueError:
+                            eprint(f"  invalid RUN line: {line}")
+                            continue
                         all_runs.append(counts)
 
     return all_runs
@@ -108,7 +112,10 @@ def analyze(all_runs: list[list[int]]) -> None:
 
     unstable = sum(1 for d, _, _ in pairs if d < 5)
     stable = len(pairs) - unstable
-    print(f"  margin < 5 counts  → {unstable} unstable pairs  ({unstable}/{len(pairs)} = {unstable/len(pairs)*100:.1f}%)")
+    print(
+        f"  margin < 5 counts  → {unstable} unstable pair comparisons  "
+        f"({unstable}/{len(pairs)} = {unstable/len(pairs)*100:.1f}%)"
+    )
     print(f"  margin ≥ 5 counts  → {stable} stable pairs")
     print()
     for diff, i, j in pairs[:20]:

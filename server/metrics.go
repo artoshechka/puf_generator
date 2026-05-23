@@ -9,9 +9,9 @@ import (
 // Metrics хранит счётчики и агрегаты в памяти.
 // Все поля обновляются атомарно или под мьютексом.
 type Metrics struct {
-	EnrollTotal   atomic.Int64
-	VerifyOK      atomic.Int64
-	VerifyFail    atomic.Int64
+	EnrollTotal    atomic.Int64
+	VerifyOK       atomic.Int64
+	VerifyFail     atomic.Int64
 	VerifyNotFound atomic.Int64
 
 	mu         sync.Mutex
@@ -45,10 +45,10 @@ func (m *Metrics) AvgHamming() float64 {
 // handleMetrics отдаёт JSON-снимок всех счётчиков.
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
-		"enroll_total":     s.metrics.EnrollTotal.Load(),
-		"verify_ok":        s.metrics.VerifyOK.Load(),
-		"verify_fail":      s.metrics.VerifyFail.Load(),
-		"verify_not_found": s.metrics.VerifyNotFound.Load(),
+		"enroll_total":           s.metrics.EnrollTotal.Load(),
+		"verify_ok":              s.metrics.VerifyOK.Load(),
+		"verify_fail":            s.metrics.VerifyFail.Load(),
+		"verify_not_found":       s.metrics.VerifyNotFound.Load(),
 		"verify_avg_hamming_pct": s.metrics.AvgHamming(),
 	})
 }

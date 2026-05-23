@@ -1,39 +1,93 @@
 package main
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/time/rate"
 )
 
 // Server объединяет слой хранения, конфигурацию и метрики для HTTP-обработчиков.
 type Server struct {
-	store   *Store
-	cfg     Config
-	metrics Metrics
+	store     *Store
+	cfg       Config
+	metrics   Metrics
+	limiterMu sync.Mutex
+	limiters  map[string]*rate.Limiter
 }
+
+const (
+	maxBodyBytes         = 1 << 20
+	maxDeviceIDLen       = 128
+	maxFingerprintHexLen = 2048
+	verifyRatePerSec     = 2
+	verifyBurst          = 5
+)
 
 // routes регистрирует все REST-эндпоинты и возвращает настроенный ServeMux.
 func (s *Server) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /devices/{id}/enroll", s.adminAuth(s.handleEnroll))
-	mux.HandleFunc("POST /devices/{id}/verify", s.handleVerify)
+	mux.HandleFunc("POST /devices/{id}/verify", s.rateLimit(s.handleVerify))
 	mux.HandleFunc("GET /devices", s.adminAuth(s.handleList))
 	mux.HandleFunc("DELETE /devices/{id}", s.adminAuth(s.handleDelete))
-	mux.HandleFunc("GET /metrics", s.handleMetrics)
+	mux.HandleFunc("GET /metrics", s.adminAuth(s.handleMetrics))
 	mux.HandleFunc("GET /health", s.handleHealth)
 	return requestLogger(mux)
+}
+
+func (s *Server) rateLimit(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if limiter := s.limiterFor(id); !limiter.Allow() {
+			writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
+			return
+		}
+		next(w, r)
+	}
+}
+
+func (s *Server) limiterFor(id string) *rate.Limiter {
+	s.limiterMu.Lock()
+	defer s.limiterMu.Unlock()
+	if s.limiters == nil {
+		s.limiters = make(map[string]*rate.Limiter)
+	}
+	limiter, ok := s.limiters[id]
+	if !ok {
+		limiter = rate.NewLimiter(rate.Limit(verifyRatePerSec), verifyBurst)
+		s.limiters[id] = limiter
+	}
+	return limiter
+}
+
+func validateDeviceID(id string) error {
+	if id == "" {
+		return errors.New("device_id must not be empty")
+	}
+	if len(id) > maxDeviceIDLen {
+		return errors.New("device_id is too long")
+	}
+	return nil
 }
 
 // handleEnroll сохраняет эталонный PUF-отпечаток устройства (только для администратора).
 // Повторная регистрация заменяет предыдущий отпечаток.
 func (s *Server) handleEnroll(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+	if err := validateDeviceID(id); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 
 	var body struct {
 		Fingerprint string `json:"fingerprint"`
@@ -42,7 +96,11 @@ func (s *Server) handleEnroll(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if _, err := parseHex(body.Fingerprint); err != nil {
+	if len(body.Fingerprint) > maxFingerprintHexLen {
+		writeError(w, http.StatusBadRequest, "fingerprint is too long")
+		return
+	}
+	if _, err := parseHex(body.Fingerprint, 0); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -63,6 +121,10 @@ func (s *Server) handleEnroll(w http.ResponseWriter, r *http.Request) {
 // Возвращает 200 + JSON при успехе, 401 если HD превышает порог.
 func (s *Server) handleVerify(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+	if err := validateDeviceID(id); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	fpHex := extractPUF(r)
 	if fpHex == "" {
@@ -70,10 +132,8 @@ func (s *Server) handleVerify(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "Authorization: PUF <hex-fingerprint> required")
 		return
 	}
-
-	candidate, err := parseHex(fpHex)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+	if len(fpHex) > maxFingerprintHexLen {
+		writeError(w, http.StatusBadRequest, "fingerprint is too long")
 		return
 	}
 
@@ -89,26 +149,33 @@ func (s *Server) handleVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reference, _ := parseHex(device.FingerprintHex)
-	hdPct := fractionalHD(reference, candidate) * 100.0
+	reference, err := parseHex(device.FingerprintHex, 0)
+	if err != nil {
+		slog.Error("parse reference", "device_id", id, "err", err)
+		writeError(w, http.StatusInternalServerError, "storage error")
+		return
+	}
+	candidate, err := parseHex(fpHex, len(reference))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	hd, err := fractionalHD(reference, candidate)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	hdPct := hd * 100.0
 	ok := hdPct <= s.cfg.ThresholdPct
 
 	s.metrics.RecordVerify(ok, hdPct)
-	slog.Info("verify",
-		"device_id", id,
-		"ok", ok,
-		"hamming_pct", hdPct,
-		"threshold_pct", s.cfg.ThresholdPct,
-	)
+	slog.Info("verify", "device_id", id, "ok", ok)
 
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 	}
-	writeJSON(w, map[string]any{
-		"ok":            ok,
-		"hamming_pct":   hdPct,
-		"threshold_pct": s.cfg.ThresholdPct,
-	})
+	writeJSON(w, map[string]any{"ok": ok})
 }
 
 // handleList возвращает список всех зарегистрированных устройств (только для администратора).
@@ -134,6 +201,10 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 // handleDelete удаляет устройство из базы данных (только для администратора).
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+	if err := validateDeviceID(id); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	found, err := s.store.Delete(r.Context(), id)
 	if err != nil {
@@ -149,15 +220,12 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 // adminAuth — middleware, требующий "Authorization: Bearer <ADMIN_TOKEN>".
-// Если ADMIN_TOKEN не задан, эндпоинт открыт (режим разработки).
 func (s *Server) adminAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.cfg.AdminToken != "" {
-			token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-			if token != s.cfg.AdminToken {
-				writeError(w, http.StatusUnauthorized, "invalid admin token")
-				return
-			}
+		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if subtle.ConstantTimeCompare([]byte(token), []byte(s.cfg.AdminToken)) != 1 {
+			writeError(w, http.StatusUnauthorized, "invalid admin token")
+			return
 		}
 		next(w, r)
 	}

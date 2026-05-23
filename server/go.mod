@@ -2,7 +2,10 @@ module puf-server
 
 go 1.22
 
-require github.com/jackc/pgx/v5 v5.7.2
+require (
+	github.com/jackc/pgx/v5 v5.7.2
+	golang.org/x/time v0.15.0
+)
 
 require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect

@@ -15,4 +15,5 @@ COPY --from=builder /src/puf-server /puf-server
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 EXPOSE 8080
+USER 65534:65534
 ENTRYPOINT ["/puf-server"]

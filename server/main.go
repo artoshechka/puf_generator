@@ -12,10 +12,16 @@ import (
 )
 
 func main() {
-	cfg := LoadConfig()
+	cfg, err := LoadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")
+	}
+	if cfg.AdminToken == "" {
+		log.Fatal("ADMIN_TOKEN is required")
 	}
 
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -31,10 +37,12 @@ func main() {
 	srv := &Server{store: store, cfg: cfg}
 
 	httpSrv := &http.Server{
-		Addr:         cfg.ListenAddr,
-		Handler:      srv.routes(),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		Addr:              cfg.ListenAddr,
+		Handler:           srv.routes(),
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {

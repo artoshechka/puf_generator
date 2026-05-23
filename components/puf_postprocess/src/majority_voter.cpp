@@ -3,6 +3,7 @@
 /// @brief Implementation of majority voting
 
 #include <majority_voter.hpp>
+#include <cassert>
 #include <vector>
 
 namespace puf
@@ -11,6 +12,7 @@ namespace puf
 MajorityVoter::MajorityVoter(std::unique_ptr<IPufGenerator> inner, size_t rounds)
     : inner_(std::move(inner)), rounds_(rounds)
 {
+    assert(rounds_ % 2U == 1U);
 }
 
 size_t MajorityVoter::FingerprintBits() const

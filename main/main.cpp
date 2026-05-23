@@ -29,12 +29,17 @@ constexpr size_t kOscCount = puf::RoOscillator::kMaxIndex + 1U;
 
 void printFingerprint(const puf::Fingerprint& fp)
 {
+#ifdef CONFIG_PUF_ALLOW_FINGERPRINT_OUTPUT
     for (const uint8_t byte : fp)
     {
         printf("%02x", byte);
     }
     printf("\n");
     (void)fflush(stdout);
+#else
+    printf("PUF_OK\n");
+    (void)fflush(stdout);
+#endif
 }
 
 puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)

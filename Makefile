@@ -7,7 +7,7 @@
 #   make docker-up         # start verification server
 
 -include .env
-export
+export IDF_PATH IDF_TAG ESP_PORT SDKCONFIG_DEFAULTS PUF_TYPE
 
 PYTHON     ?= python3
 PORT_ARG    = $(if $(ESP_PORT),--port $(ESP_PORT),)
@@ -22,8 +22,8 @@ SDKCONFIG_DEFAULTS := sdkconfig.defaults
 endif
 export SDKCONFIG_DEFAULTS
 
-.PHONY: all firmware flash monitor server docker-up docker-down docker-clean \
-        test puf board-logs raw-osc help
+.PHONY: all firmware flash monitor server server-run docker-up docker-down docker-clean \
+	docker-logs test puf board-logs raw-osc help
 
 all: firmware server
 

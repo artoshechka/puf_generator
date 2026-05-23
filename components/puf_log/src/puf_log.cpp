@@ -9,6 +9,8 @@
 #include <cstdio>
 #include <cstring>
 #include <puf_log.hpp>
+#include <algorithm>
+#include <vector>
 
 namespace puf
 {
@@ -20,6 +22,7 @@ char gBuf[kLogBufferSize];
 size_t gHead = 0;
 size_t gUsed = 0;
 SemaphoreHandle_t gMutex = nullptr;
+size_t gTruncated = 0;
 
 vprintf_like_t gOrigVprintf = nullptr;
 
@@ -55,7 +58,15 @@ int pufVprintf(const char* fmt, va_list args)
     const int n = vsnprintf(tmp, sizeof(tmp), fmt, args);
     if (n > 0)
     {
-        ringAppend(tmp, static_cast<size_t>(n));
+        const size_t actual = std::min(static_cast<size_t>(n), sizeof(tmp) - 1U);
+        ringAppend(tmp, actual);
+        if (static_cast<size_t>(n) >= sizeof(tmp))
+        {
+            static const char kTrunc[] = "...[truncated]";
+            ringAppend(kTrunc, sizeof(kTrunc) - 1U);
+            ++gTruncated;
+        }
+        memset(tmp, 0, sizeof(tmp));
     }
 
     if (gOrigVprintf != nullptr)
@@ -86,25 +97,26 @@ void LogDump()
     }
     (void)xSemaphoreTake(gMutex, portMAX_DELAY);
 
-    printf("--- LOG DUMP BEGIN (%zu bytes) ---\n", gUsed);
-
-    const size_t first = kLogBufferSize - gHead;
-    if (gUsed <= first)
+    const size_t used = gUsed;
+    std::vector<char> snapshot(used);
+    for (size_t i = 0; i < used; ++i)
     {
-        (void)fwrite(gBuf + gHead, 1U, gUsed, stdout);
-    } else
-    {
-        (void)fwrite(gBuf + gHead, 1U, first, stdout);
-        (void)fwrite(gBuf, 1U, gUsed - first, stdout);
+        snapshot[i] = gBuf[(gHead + i) % kLogBufferSize];
     }
 
-    printf("\n--- LOG DUMP END ---\n");
-    (void)fflush(stdout);
-
+    memset(gBuf, 0, sizeof(gBuf));
     gHead = 0;
     gUsed = 0;
 
     (void)xSemaphoreGive(gMutex);
+
+    printf("--- LOG DUMP BEGIN (%zu bytes) ---\n", used);
+    if (!snapshot.empty())
+    {
+        (void)fwrite(snapshot.data(), 1U, snapshot.size(), stdout);
+    }
+    printf("\n--- LOG DUMP END ---\n");
+    (void)fflush(stdout);
 }
 
 }  // namespace puf

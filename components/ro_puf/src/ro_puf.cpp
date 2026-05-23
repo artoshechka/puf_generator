@@ -39,6 +39,9 @@ Fingerprint RoPuf::Generate()
             if (counts[i] > counts[j])
             {
                 fp[bitIdx / 8U] |= static_cast<uint8_t>(1U << (bitIdx % 8U));
+            } else if (counts[i] == counts[j] && ((counts[i] & 1U) != 0U))
+            {
+                fp[bitIdx / 8U] |= static_cast<uint8_t>(1U << (bitIdx % 8U));
             }
             ++bitIdx;
         }

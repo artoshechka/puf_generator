@@ -12,9 +12,12 @@ namespace puf::metrics
 
 size_t HammingDistance(const Fingerprint& a, const Fingerprint& b)
 {
+    if (a.size() != b.size())
+    {
+        throw std::invalid_argument("fingerprint length mismatch");
+    }
     size_t dist = 0;
-    const size_t len = std::min(a.size(), b.size());
-    for (size_t i = 0; i < len; ++i)
+    for (size_t i = 0; i < a.size(); ++i)
     {
         dist += static_cast<size_t>(std::popcount(static_cast<uint8_t>(a[i] ^ b[i])));
     }
@@ -23,8 +26,11 @@ size_t HammingDistance(const Fingerprint& a, const Fingerprint& b)
 
 double FractionalHD(const Fingerprint& a, const Fingerprint& b)
 {
-    if (a.empty() || b.empty()) return 0.0;
-    const size_t bits = std::min(a.size(), b.size()) * 8;
+    if (a.empty() || b.empty())
+    {
+        throw std::invalid_argument("fingerprints must not be empty");
+    }
+    const size_t bits = a.size() * 8U;
     return static_cast<double>(HammingDistance(a, b)) / static_cast<double>(bits);
 }
 

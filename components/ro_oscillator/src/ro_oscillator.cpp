@@ -10,6 +10,13 @@
 namespace puf
 {
 
+namespace
+{
+
+constexpr uint32_t kMaxWindowCycles = 1'000'000U;
+
+}  // namespace
+
 // ─── Oscillators ──────────────────────────────────────────────────────────────
 //
 // A volatile sink initialized with a unique id guarantees unique machine code
@@ -61,6 +68,10 @@ RoOscillator::RoOscillator(size_t index) : index_(index)
 
 uint32_t RoOscillator::Measure(uint32_t windowCycles)
 {
+    if (windowCycles > kMaxWindowCycles)
+    {
+        return 0U;
+    }
     return kOscTable[index_](windowCycles);
 }
 

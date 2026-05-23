@@ -57,7 +57,7 @@ go run .
 |---|---|---|
 | `DATABASE_URL` | — (обязательная) | DSN PostgreSQL |
 | `LISTEN_ADDR` | `:8080` | Адрес и порт сервера |
-| `ADMIN_TOKEN` | — | Bearer-токен для админ-операций; если пустой — без защиты |
+| `ADMIN_TOKEN` | — (required) | Bearer-токен для админ-операций |
 | `PUF_THRESHOLD_PCT` | `10.0` | Максимальный допустимый intra-HD в процентах |
 
 ## REST API
@@ -72,7 +72,7 @@ Authorization: Bearer <ADMIN_TOKEN>
 # Верификация устройства по PUF-отпечатку
 POST /devices/{id}/verify
 Authorization: PUF <hex-fingerprint>
-→ {"ok": true, "hamming_pct": 4.2, "threshold_pct": 10.0}
+→ {"ok": true}
 
 # Список устройств (admin)
 GET /devices
@@ -82,8 +82,9 @@ Authorization: Bearer <ADMIN_TOKEN>
 DELETE /devices/{id}
 Authorization: Bearer <ADMIN_TOKEN>
 
-# Метрики сервера (открытый эндпоинт)
+# Метрики сервера (admin)
 GET /metrics
+Authorization: Bearer <ADMIN_TOKEN>
 → {"enroll_total": 3, "verify_ok": 12, "verify_fail": 2,
    "verify_not_found": 1, "verify_avg_hamming_pct": 3.8}
 

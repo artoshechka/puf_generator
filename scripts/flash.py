@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 
+# NOTE: IDF_PATH is captured at import time. Set it before running the script.
 IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH", "~/esp/esp-idf"))
 IDF_TAG = os.getenv("IDF_TAG", "v5.4.1")
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,8 +15,8 @@ IDF_PY = os.path.join(IDF_PATH, "tools", "idf.py")
 ESPRESSIF_DIR = os.path.expanduser("~/.espressif")
 
 
-def run(cmd: str) -> None:
-    result = subprocess.run(cmd, shell=True)
+def run(args: list[str]) -> None:
+    result = subprocess.run(args)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
@@ -44,11 +45,11 @@ def build_env(venv: str) -> dict:
     return env
 
 
-def idf(args: str) -> None:
+def idf(args: list[str]) -> None:
     venv = find_venv()
     python = os.path.join(venv, "bin", "python")
     env = build_env(venv)
-    result = subprocess.run([python, IDF_PY] + args.split(), cwd=PROJECT_ROOT, env=env)
+    result = subprocess.run([python, IDF_PY] + args, cwd=PROJECT_ROOT, env=env)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
@@ -56,14 +57,21 @@ def idf(args: str) -> None:
 def ensure_idf() -> None:
     if not os.path.isdir(IDF_PATH):
         print(f"Cloning ESP-IDF {IDF_TAG} ...")
-        run(
-            f"git clone --recursive --depth 1 --branch {IDF_TAG} "
-            f"https://github.com/espressif/esp-idf.git {IDF_PATH}"
-        )
+        run([
+            "git",
+            "clone",
+            "--recursive",
+            "--depth",
+            "1",
+            "--branch",
+            IDF_TAG,
+            "https://github.com/espressif/esp-idf.git",
+            IDF_PATH,
+        ])
 
     if not glob.glob(os.path.join(ESPRESSIF_DIR, "python_env", "*/bin/python3")):
         print("Running ESP-IDF installer ...")
-        run(f"{IDF_PATH}/install.sh esp32")
+        run([os.path.join(IDF_PATH, "install.sh"), "esp32"])
 
 
 def detect_port() -> str:
@@ -88,17 +96,17 @@ def main() -> None:
     os.chdir(PROJECT_ROOT)
 
     if args.menuconfig:
-        idf("menuconfig")
+        idf(["menuconfig"])
     elif args.monitor_only:
         port = args.port or detect_port()
-        idf(f"-p {port} monitor")
+        idf(["-p", port, "monitor"])
     elif args.build_only:
-        idf("set-target esp32c3")
-        idf("build")
+        idf(["set-target", "esp32c3"])
+        idf(["build"])
     else:
         port = args.port or detect_port()
-        idf("set-target esp32c3")
-        idf(f"-p {port} flash monitor")
+        idf(["set-target", "esp32c3"])
+        idf(["-p", port, "flash", "monitor"])
 
 
 if __name__ == "__main__":
