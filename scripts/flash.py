@@ -9,8 +9,8 @@ import sys
 
 # ВНИМАНИЕ: IDF_PATH считывается на этапе импорта модуля.
 # Установите переменную окружения до запуска скрипта.
-IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH", "~/esp/esp-idf"))
-IDF_TAG = os.getenv("IDF_TAG", "v5.4.1")
+IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH") or "~/esp/esp-idf")
+IDF_TAG = os.getenv("IDF_TAG") or "v5.4.1"
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IDF_PY = os.path.join(IDF_PATH, "tools", "idf.py")
 ESPRESSIF_DIR = os.path.expanduser("~/.espressif")
