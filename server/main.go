@@ -1,3 +1,5 @@
+// Package main реализует HTTP-сервер puf-server для регистрации
+// и аутентификации устройств по их PUF-отпечаткам.
 package main
 
 import (
@@ -11,11 +13,19 @@ import (
 	"time"
 )
 
+// main — точка входа сервера: загружает конфигурацию, инициализирует
+// хранилище, запускает HTTP-сервер и обрабатывает корректное завершение работы.
 func main() {
-	cfg := LoadConfig()
+	cfg, err := LoadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")
+	}
+	if cfg.AdminToken == "" {
+		log.Fatal("ADMIN_TOKEN is required")
 	}
 
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -31,10 +41,12 @@ func main() {
 	srv := &Server{store: store, cfg: cfg}
 
 	httpSrv := &http.Server{
-		Addr:         cfg.ListenAddr,
-		Handler:      srv.routes(),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		Addr:              cfg.ListenAddr,
+		Handler:           srv.routes(),
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {

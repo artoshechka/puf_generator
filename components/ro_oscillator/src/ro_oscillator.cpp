@@ -1,6 +1,6 @@
 /// @file ro_oscillator.cpp
 /// @author Artemenko Anton
-/// @brief Ring Oscillator implementation for ESP32 (Xtensa LX6, ESP-IDF v5.x)
+/// @brief Реализация кольцевого осциллятора для ESP32 (Xtensa LX6, ESP-IDF v5.x)
 
 #include <esp_cpu.h>
 
@@ -10,11 +10,18 @@
 namespace puf
 {
 
-// ─── Oscillators ──────────────────────────────────────────────────────────────
+namespace
+{
+
+constexpr uint32_t kMaxWindowCycles = 1'000'000U;
+
+}  // namespace
+
+// ─── Осцилляторы ──────────────────────────────────────────────────────────────
 //
-// A volatile sink initialized with a unique id guarantees unique machine code
-// for each function — the compiler cannot merge them.
-// Different IRAM addresses → different cache-line alignment → counter variation.
+// Volatile-приёмник, инициализированный уникальным идентификатором, гарантирует
+// уникальный машинный код для каждой функции — компилятор не может их объединить.
+// Различные адреса IRAM → различное выравнивание кэш-линий → вариация счётчиков.
 
 #define DEFINE_OSC(id)                                                                             \
     static IRAM_ATTR __attribute__((noinline, optimize("O1"))) uint32_t oscFn##id(uint32_t window) \
@@ -37,10 +44,11 @@ DEFINE_OSC(1)
 DEFINE_OSC(2)
 DEFINE_OSC(3)
 DEFINE_OSC(4)
-DEFINE_OSC(5) DEFINE_OSC(6) DEFINE_OSC(7) DEFINE_OSC(8) DEFINE_OSC(9) DEFINE_OSC(10) DEFINE_OSC(11) DEFINE_OSC(12)
-    DEFINE_OSC(13) DEFINE_OSC(14) DEFINE_OSC(15) DEFINE_OSC(16) DEFINE_OSC(17) DEFINE_OSC(18) DEFINE_OSC(19)
-        DEFINE_OSC(20) DEFINE_OSC(21) DEFINE_OSC(22) DEFINE_OSC(23) DEFINE_OSC(24) DEFINE_OSC(25) DEFINE_OSC(26)
-            DEFINE_OSC(27) DEFINE_OSC(28) DEFINE_OSC(29) DEFINE_OSC(30) DEFINE_OSC(31)
+DEFINE_OSC(5)
+DEFINE_OSC(6) DEFINE_OSC(7) DEFINE_OSC(8) DEFINE_OSC(9) DEFINE_OSC(10) DEFINE_OSC(11) DEFINE_OSC(12) DEFINE_OSC(13)
+    DEFINE_OSC(14) DEFINE_OSC(15) DEFINE_OSC(16) DEFINE_OSC(17) DEFINE_OSC(18) DEFINE_OSC(19) DEFINE_OSC(20)
+        DEFINE_OSC(21) DEFINE_OSC(22) DEFINE_OSC(23) DEFINE_OSC(24) DEFINE_OSC(25) DEFINE_OSC(26) DEFINE_OSC(27)
+            DEFINE_OSC(28) DEFINE_OSC(29) DEFINE_OSC(30) DEFINE_OSC(31)
 
 #undef DEFINE_OSC
 
@@ -61,6 +69,10 @@ RoOscillator::RoOscillator(size_t index) : index_(index)
 
 uint32_t RoOscillator::Measure(uint32_t windowCycles)
 {
+    if (windowCycles > kMaxWindowCycles)
+    {
+        return 0U;
+    }
     return kOscTable[index_](windowCycles);
 }
 

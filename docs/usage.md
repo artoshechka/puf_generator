@@ -1,20 +1,20 @@
-# Usage (C++ API)
+# Использование (C++ API)
 
-## Runtime PUF selection
+## Выбор PUF во время выполнения
 
 ```cpp
 #include <esp32_puf_factory.hpp>
 #include <puf_type.hpp>
 
 puf::Esp32PufFactory factory;
-puf::PufType type = puf::PufType::Sram; // choose at runtime
+puf::PufType type = puf::PufType::Sram; // выбор во время выполнения
 
 const auto generator = factory.Create(type, 256);
 const puf::Fingerprint fp = generator->Generate();
-// fp is std::vector<uint8_t>, 32 bytes (256 bits)
+// fp — это std::vector<uint8_t> длиной 32 байта (256 бит)
 ```
 
-## RO PUF (explicit)
+## RO PUF (явное создание)
 
 ```cpp
 #include <esp32_puf_factory.hpp>
@@ -24,7 +24,7 @@ const auto generator = factory.CreateRoPuf(256);
 const puf::Fingerprint fp = generator->Generate();
 ```
 
-## SRAM PUF (explicit)
+## SRAM PUF (явное создание)
 
 ```cpp
 #include <esp32_puf_factory.hpp>
@@ -34,7 +34,7 @@ const auto generator = factory.CreateSramPuf(256);
 const puf::Fingerprint fp = generator->Generate();
 ```
 
-## With post-processing
+## С пост-обработкой
 
 ```cpp
 #include <esp32_puf_factory.hpp>
@@ -44,16 +44,16 @@ const puf::Fingerprint fp = generator->Generate();
 puf::Esp32PufFactory factory;
 auto raw = factory.CreateRoPuf(512);
 
-// Stabilize with majority voting (3 rounds)
+// Стабилизация мажоритарным голосованием (3 раунда)
 auto stable = std::make_unique<puf::MajorityVoter>(std::move(raw), 3);
 
-// Remove bias with Von Neumann debiasing
+// Устранение смещения дебиасингом фон Неймана
 auto debiased = std::make_unique<puf::VonNeumannDebias>(std::move(stable), 256);
 
 const puf::Fingerprint fp = debiased->Generate();
 ```
 
-## Storage and authentication
+## Хранение и аутентификация
 
 ```cpp
 #include <nvs_fingerprint_storage.hpp>
@@ -61,36 +61,36 @@ const puf::Fingerprint fp = debiased->Generate();
 
 puf::NvsFingerprintStorage storage;
 
-// Enrollment (once during manufacturing)
+// Регистрация (однократно при производстве)
 if (!storage.HasFingerprint()) {
     storage.Store(fp);
 }
 
-// Authentication (10% intra-HD threshold)
+// Аутентификация (порог внутриустройственного расстояния Хэмминга 10%)
 puf::HammingAuthenticator auth(storage.Load(), 10.0);
 const bool ok = auth.Authenticate(fp);
 ```
 
-## Fingerprint generation principles
+## Принципы генерации отпечатка
 
 **RO PUF:**
-1. `Esp32PufFactory` creates N `RoOscillator` instances (N*(N-1)/2 pairs >= bits).
-2. `RoPuf::Generate()` measures each oscillator for `windowCycles` CPU cycles.
-3. For each pair `(i, j)`: `counts[i] > counts[j]` yields bit `1`, else `0`.
-4. Result is `ceil(bits/8)` bytes, unique per chip.
+1. `Esp32PufFactory` создаёт N экземпляров `RoOscillator` (N*(N-1)/2 пар >= bits).
+2. `RoPuf::Generate()` измеряет каждый осциллятор в течение `windowCycles` тактов процессора.
+3. Для каждой пары `(i, j)`: `counts[i] > counts[j]` даёт бит `1`, иначе `0`.
+4. Результат — `ceil(bits/8)` байт, уникальных для каждого чипа.
 
 **SRAM PUF:**
-1. `Esp32PufFactory` allocates `s_sram_puf_buf[64]` in a `.noinit` section.
-2. `SramPuf::Generate()` copies the first `ceil(bits/8)` bytes from that buffer.
-3. Entropy comes from physical SRAM cell variations at power-on.
+1. `Esp32PufFactory` размещает `s_sram_puf_buf[64]` в секции `.noinit`.
+2. `SramPuf::Generate()` копирует первые `ceil(bits/8)` байт из этого буфера.
+3. Источник энтропии — физические разбросы ячеек SRAM при подаче питания.
 
-## Metrics (`puf_metrics`)
+## Метрики (`puf_metrics`)
 
-| Metric | Ideal | Description |
+| Метрика | Идеал | Описание |
 |---|---|---|
-| `IntraHD` | 0.0 | Mean HD between repeated measurements of one device (goal: < 5%) |
-| `InterHD` | 0.5 | Mean HD between fingerprints of different devices (maximal separation) |
-| `Uniformity` | 0.5 | Fraction of ones (bit balance) |
+| `IntraHD` | 0.0 | Среднее расстояние Хэмминга между повторными измерениями одного устройства (цель: < 5%) |
+| `InterHD` | 0.5 | Среднее расстояние Хэмминга между отпечатками разных устройств (максимальное разделение) |
+| `Uniformity` | 0.5 | Доля единиц (баланс битов) |
 
 ```cpp
 #include <puf_metrics.hpp>

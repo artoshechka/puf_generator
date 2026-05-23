@@ -9,10 +9,9 @@ namespace puf
 {
 
 /// @brief Источник энтропии PUF-генератора
-enum class PufType
-{
-    Ro,   ///< Ring Oscillator PUF
-    Sram, ///< SRAM PUF по начальному состоянию памяти
+enum class PufType {
+    Ro,    ///< Ring Oscillator PUF
+    Sram,  ///< SRAM PUF по начальному состоянию памяти
 };
 
 }  // namespace puf

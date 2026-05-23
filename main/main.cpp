@@ -2,21 +2,18 @@
 /// @brief Точка входа: генерация PUF-отпечатка и командный интерфейс по UART.
 ///
 /// Поддерживаемые команды (отправить строку + '\n' в монитор):
-///   PUF   — сгенерировать и вывести новый отпечаток (кешируется в NVS)
+///   PUF   — сгенерировать и вывести новый отпечаток
 ///   LOGS  — дамп накопленных логов и очистка буфера
-///   DEL   — удалить кешированный отпечаток из NVS
 ///   RAW   — вывести сырые счётчики всех 32 осцилляторов (3 прогона)
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <nvs_flash.h>
 #include <sdkconfig.h>
 
 #include <cstdio>
 #include <cstring>
 #include <esp32_puf_factory.hpp>
 #include <majority_voter.hpp>
-#include <nvs_fingerprint_storage.hpp>
 #include <puf_log.hpp>
 #include <puf_type.hpp>
 #include <ro_oscillator.hpp>
@@ -29,15 +26,20 @@ constexpr size_t kOscCount = puf::RoOscillator::kMaxIndex + 1U;
 
 void printFingerprint(const puf::Fingerprint& fp)
 {
+#ifdef CONFIG_PUF_ALLOW_FINGERPRINT_OUTPUT
     for (const uint8_t byte : fp)
     {
         printf("%02x", byte);
     }
     printf("\n");
     (void)fflush(stdout);
+#else
+    printf("PUF_OK\n");
+    (void)fflush(stdout);
+#endif
 }
 
-puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
+puf::Fingerprint generate()
 {
     puf::Esp32PufFactory factory;
 
@@ -49,10 +51,7 @@ puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
 
     auto raw = factory.Create(kPufType, CONFIG_PUF_FINGERPRINT_BITS);
     puf::MajorityVoter generator(std::move(raw), CONFIG_PUF_MAJORITY_ROUNDS);
-
-    const puf::Fingerprint fp = generator.Generate();
-    storage.Store(fp);
-    return fp;
+    return generator.Generate();
 }
 
 void printRawCounts()
@@ -82,37 +81,18 @@ void printRawCounts()
     (void)fflush(stdout);
 }
 
-void initNvs()
-{
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        (void)nvs_flash_erase();
-        (void)nvs_flash_init();
-    }
-}
-
 }  // namespace
 
 extern "C" void app_main()
 {
     puf::LogInit();
-    initNvs();
-
-    puf::NvsFingerprintStorage storage;
 
     try
     {
-        if (storage.HasFingerprint())
-        {
-            printFingerprint(storage.Load());
-        } else
-        {
-            printFingerprint(generateAndStore(storage));
-        }
+        printFingerprint(generate());
     } catch (...)
     {
-        // NVS failure must not crash the device; boot continues without fingerprint output.
+        // Сбой генерации не должен ронять устройство; загрузка продолжается без вывода отпечатка.
     }
 
     char line[32];
@@ -122,7 +102,10 @@ extern "C" void app_main()
         const int c = getchar();
         if (c == EOF)
         {
-            vTaskDelay(pdMS_TO_TICKS(1));
+            // 10 мс гарантированно выдают как минимум 1 тик при default TICK_RATE=100Hz,
+            // в отличие от pdMS_TO_TICKS(1) который округляется до 0 и не даёт IDLE-задаче
+            // достаточно процессорного времени — task_wdt начинает срабатывать.
+            vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
 
@@ -133,29 +116,20 @@ extern "C" void app_main()
             {
                 try
                 {
-                    printFingerprint(generateAndStore(storage));
+                    printFingerprint(generate());
                 } catch (...)
                 {
-                    // NVS store failure: fingerprint not cached but was generated.
+                    // Сбой генерации: не критично.
                 }
             } else if (strcmp(line, "LOGS") == 0)
             {
                 puf::LogDump();
-            } else if (strcmp(line, "DEL") == 0)
-            {
-                try
-                {
-                    storage.Delete();
-                } catch (...)
-                {
-                    // NVS delete failure: non-fatal.
-                }
             } else if (strcmp(line, "RAW") == 0)
             {
                 printRawCounts();
             } else
             {
-                // Unknown command — ignore.
+                // Неизвестная команда — игнорируем.
             }
             pos = 0;
         } else if (pos < sizeof(line) - 1U)
@@ -164,7 +138,7 @@ extern "C" void app_main()
             ++pos;
         } else
         {
-            // Line too long — ignore overflow character.
+            // Строка слишком длинная — игнорируем лишний символ.
         }
     }
 }

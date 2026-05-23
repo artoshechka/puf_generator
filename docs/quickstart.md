@@ -69,16 +69,16 @@ curl -X POST http://localhost:8080/devices/esp32-001/verify \
   -H "Authorization: PUF $PUF"
 ```
 
-Успешная верификация (HD ≤ порога):
+Успешная верификация:
 
 ```json
-{"ok": true, "hamming_pct": 3.9, "threshold_pct": 10.0}
+{"ok": true}
 ```
 
 Неуспешная (чужое или повреждённое устройство):
 
 ```json
-{"ok": false, "hamming_pct": 47.2, "threshold_pct": 10.0}
+{"ok": false}
 ```
 
 HTTP-статус при отказе — `401 Unauthorized`.
@@ -96,8 +96,9 @@ curl http://localhost:8080/devices \
 curl -X DELETE http://localhost:8080/devices/esp32-001 \
   -H "Authorization: Bearer secret"
 
-# Текущие метрики сервера
-curl http://localhost:8080/metrics
+# Текущие метрики сервера (admin)
+curl http://localhost:8080/metrics \
+  -H "Authorization: Bearer secret"
 ```
 
 ---

@@ -1,5 +1,5 @@
 # Этап сборки: компилируем статический бинарь
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -15,4 +15,5 @@ COPY --from=builder /src/puf-server /puf-server
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 EXPOSE 8080
+USER 65534:65534
 ENTRYPOINT ["/puf-server"]

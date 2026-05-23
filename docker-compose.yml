@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: pufdb
       POSTGRES_USER: puf
-      POSTGRES_PASSWORD: puf
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-puf}"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -17,9 +17,9 @@ services:
     build:
       context: ./server
     environment:
-      DATABASE_URL: postgres://puf:puf@postgres:5432/pufdb
+      DATABASE_URL: "${DATABASE_URL:-postgres://puf:${POSTGRES_PASSWORD:-puf}@postgres:5432/pufdb}"
       LISTEN_ADDR: ":8080"
-      ADMIN_TOKEN: "${ADMIN_TOKEN:-changeme}"
+      ADMIN_TOKEN: "${ADMIN_TOKEN}"
       PUF_THRESHOLD_PCT: "${PUF_THRESHOLD_PCT:-10.0}"
     ports:
       - "8080:8080"

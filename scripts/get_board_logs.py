@@ -53,6 +53,7 @@ def fetch_logs(port: str, baud: int) -> list[str]:
 
         lines: list[str] = []
         inside = False
+        ended = False
         deadline = time.monotonic() + _TIMEOUT
 
         while time.monotonic() < deadline:
@@ -67,12 +68,15 @@ def fetch_logs(port: str, baud: int) -> list[str]:
                 continue
             if _DUMP_END in line:
                 eprint(line)
+                ended = True
                 break
             if inside:
                 lines.append(line)
 
         if not inside:
             sys.exit("Timed out: no log dump received. Is the firmware flashed?")
+        if inside and not ended:
+            sys.exit("Timed out: log dump incomplete.")
 
     return lines
 

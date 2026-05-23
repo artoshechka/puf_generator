@@ -12,6 +12,12 @@ menu "PUF Generator"
             bool "SRAM PUF"
     endchoice
 
+    config PUF_ALLOW_FINGERPRINT_OUTPUT
+        bool "Allow fingerprint output to UART"
+        default n
+        help
+            Если выключено, прошивка печатает только маркер успеха вместо сырых байт отпечатка.
+
     config PUF_FINGERPRINT_BITS
         int "Длина отпечатка в битах"
         default 256
