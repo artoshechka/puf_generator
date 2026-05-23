@@ -2,21 +2,18 @@
 /// @brief Точка входа: генерация PUF-отпечатка и командный интерфейс по UART.
 ///
 /// Поддерживаемые команды (отправить строку + '\n' в монитор):
-///   PUF   — сгенерировать и вывести новый отпечаток (кешируется в NVS)
+///   PUF   — сгенерировать и вывести новый отпечаток
 ///   LOGS  — дамп накопленных логов и очистка буфера
-///   DEL   — удалить кешированный отпечаток из NVS
 ///   RAW   — вывести сырые счётчики всех 32 осцилляторов (3 прогона)
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <nvs_flash.h>
 #include <sdkconfig.h>
 
 #include <cstdio>
 #include <cstring>
 #include <esp32_puf_factory.hpp>
 #include <majority_voter.hpp>
-#include <nvs_fingerprint_storage.hpp>
 #include <puf_log.hpp>
 #include <puf_type.hpp>
 #include <ro_oscillator.hpp>
@@ -42,7 +39,7 @@ void printFingerprint(const puf::Fingerprint& fp)
 #endif
 }
 
-puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
+puf::Fingerprint generate()
 {
     puf::Esp32PufFactory factory;
 
@@ -54,10 +51,7 @@ puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
 
     auto raw = factory.Create(kPufType, CONFIG_PUF_FINGERPRINT_BITS);
     puf::MajorityVoter generator(std::move(raw), CONFIG_PUF_MAJORITY_ROUNDS);
-
-    const puf::Fingerprint fp = generator.Generate();
-    storage.Store(fp);
-    return fp;
+    return generator.Generate();
 }
 
 void printRawCounts()
@@ -87,37 +81,18 @@ void printRawCounts()
     (void)fflush(stdout);
 }
 
-void initNvs()
-{
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        (void)nvs_flash_erase();
-        (void)nvs_flash_init();
-    }
-}
-
 }  // namespace
 
 extern "C" void app_main()
 {
     puf::LogInit();
-    initNvs();
-
-    puf::NvsFingerprintStorage storage;
 
     try
     {
-        if (storage.HasFingerprint())
-        {
-            printFingerprint(storage.Load());
-        } else
-        {
-            printFingerprint(generateAndStore(storage));
-        }
+        printFingerprint(generate());
     } catch (...)
     {
-        // NVS failure must not crash the device; boot continues without fingerprint output.
+        // Generation failure must not crash the device; boot continues without fingerprint output.
     }
 
     char line[32];
@@ -138,23 +113,14 @@ extern "C" void app_main()
             {
                 try
                 {
-                    printFingerprint(generateAndStore(storage));
+                    printFingerprint(generate());
                 } catch (...)
                 {
-                    // NVS store failure: fingerprint not cached but was generated.
+                    // Generation failure: non-fatal.
                 }
             } else if (strcmp(line, "LOGS") == 0)
             {
                 puf::LogDump();
-            } else if (strcmp(line, "DEL") == 0)
-            {
-                try
-                {
-                    storage.Delete();
-                } catch (...)
-                {
-                    // NVS delete failure: non-fatal.
-                }
             } else if (strcmp(line, "RAW") == 0)
             {
                 printRawCounts();
