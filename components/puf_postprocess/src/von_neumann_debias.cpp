@@ -44,7 +44,7 @@ Fingerprint VonNeumannDebias::Generate()
                 continue;
             }
 
-            if (b0 != 0U)
+            if (b1 != 0U)
             {
                 result[outIdx / 8U] |= static_cast<uint8_t>(1U << (outIdx % 8U));
             }
