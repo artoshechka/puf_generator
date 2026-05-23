@@ -6,10 +6,19 @@
 #include <ro_oscillator.hpp>
 #include <ro_puf.hpp>
 #include <ro_puf_config.hpp>
+#include <sram_puf.hpp>
+#include <sram_puf_config.hpp>
 #include <stdexcept>
 
 namespace puf
 {
+
+namespace
+{
+
+static uint8_t s_sram_puf_buf[kDefaultSramPufBytes] __attribute__((section(".noinit")));
+
+}  // namespace
 
 namespace
 {
@@ -49,6 +58,15 @@ std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateRoPuf(size_t bits)
 #endif
 
     return std::make_unique<RoPuf>(std::move(oscs), bits, windowCycles);
+}
+
+std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateSramPuf(size_t bits)
+{
+    if (bits > kDefaultSramPufBytes * 8U)
+    {
+        throw std::invalid_argument("requested bits exceed SRAM PUF buffer capacity");
+    }
+    return std::make_unique<SramPuf>(s_sram_puf_buf, kDefaultSramPufBytes, bits);
 }
 
 }  // namespace puf
