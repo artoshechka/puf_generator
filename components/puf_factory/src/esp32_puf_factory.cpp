@@ -16,7 +16,7 @@ namespace puf
 namespace
 {
 
-static uint8_t s_sram_puf_buf[kDefaultSramPufBytes] __attribute__((section(".noinit")));
+static volatile uint8_t s_sram_puf_buf[kDefaultSramPufBytes] __attribute__((section(".noinit")));
 
 }  // namespace
 

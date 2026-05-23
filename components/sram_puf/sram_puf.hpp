@@ -21,7 +21,7 @@ class SramPuf final : public IPufGenerator
     /// @param[in] base      Указатель на область SRAM с энтропией при включении питания
     /// @param[in] byteCount Количество доступных байт в области
     /// @param[in] bits      Желаемая длина отпечатка в битах (<= byteCount * 8)
-    SramPuf(const uint8_t* base, size_t byteCount, size_t bits);
+    SramPuf(const volatile uint8_t* base, size_t byteCount, size_t bits);
 
     /// @return Байты отпечатка, считанные напрямую из области SRAM
     Fingerprint Generate() override;
@@ -30,7 +30,7 @@ class SramPuf final : public IPufGenerator
     size_t FingerprintBits() const override;
 
    private:
-    const uint8_t* base_;
+    const volatile uint8_t* base_;
     size_t byteCount_;
     size_t bits_;
 };
