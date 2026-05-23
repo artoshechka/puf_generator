@@ -61,6 +61,40 @@ cp .env.example .env
 
 ---
 
+## Основные команды
+
+Тип PUF передаётся через переменную `PUF_TYPE` (по умолчанию `ro`).
+**Не** через позиционный аргумент: `make flash sram` ошибочно — Make трактует
+`sram` как отдельный таргет.
+
+```bash
+# Прошивка
+make flash                       # собрать и прошить с RO PUF
+make flash PUF_TYPE=sram         # собрать и прошить с SRAM PUF
+make flash PUF_TYPE=sram ESP_PORT=/dev/cu.usbmodem101
+make firmware PUF_TYPE=sram      # только сборка, без прошивки
+make monitor                     # открыть монитор без перепрошивки
+make menuconfig                  # меню конфигурации прошивки
+
+# Сервер
+make docker-up                   # сервер + PostgreSQL в Docker (нужен .env)
+make docker-down                 # остановить контейнеры (данные сохранятся)
+make docker-clean                # остановить + удалить БД
+make docker-logs                 # следить за логами сервера
+make server                      # собрать локальный бинарь (нужен Go 1.25+)
+
+# Тесты и утилиты
+make test                        # хост-тесты C++ (нужен Conan)
+make puf                         # прочитать отпечаток с подключённой платы
+make raw-osc ITER=20             # снять сырые счётчики осцилляторов, 20 прогонов
+make board-logs                  # забрать буфер логов с платы
+make help                        # полный список таргетов
+```
+
+Полное описание каждой команды — в [docs/build.md](docs/build.md).
+
+---
+
 - [Сценарий использования](docs/quickstart.md)
 - [Архитектура](docs/architecture.md)
 - [Требования и сборка](docs/build.md)
