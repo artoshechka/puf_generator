@@ -1,6 +1,6 @@
 /// @file esp32_puf_factory.cpp
 /// @author Artemenko Anton
-/// @brief PUF factory implementation for ESP32
+/// @brief Реализация фабрики PUF для ESP32
 
 #include <esp32_puf_factory.hpp>
 #include <ro_oscillator.hpp>

@@ -5,11 +5,11 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <puf_log.hpp>
-#include <algorithm>
 #include <vector>
 
 namespace puf

@@ -1,6 +1,6 @@
 /// @file ro_puf.cpp
 /// @author Artemenko Anton
-/// @brief Ring Oscillator PUF implementation
+/// @brief Реализация PUF на кольцевых осцилляторах
 
 #include <cassert>
 #include <ro_puf.hpp>

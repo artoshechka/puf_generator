@@ -1,10 +1,10 @@
-# Unified build facade for puf_generator.
-# All targets delegate to the appropriate toolchain — nothing is hardcoded here.
+# Унифицированный фасад сборки puf_generator.
+# Все цели делегируют работу соответствующему тулчейну — ничего не захардкожено здесь.
 #
-# Quickstart:
-#   cp .env.example .env   # edit if needed
-#   make flash             # build + flash + open monitor
-#   make docker-up         # start verification server
+# Быстрый старт:
+#   cp .env.example .env   # отредактировать при необходимости
+#   make flash             # сборка + прошивка + открытие монитора
+#   make docker-up         # запуск сервера верификации
 
 -include .env
 export IDF_PATH IDF_TAG ESP_PORT SDKCONFIG_DEFAULTS PUF_TYPE
@@ -12,8 +12,8 @@ export IDF_PATH IDF_TAG ESP_PORT SDKCONFIG_DEFAULTS PUF_TYPE
 PYTHON     ?= python3
 PORT_ARG    = $(if $(ESP_PORT),--port $(ESP_PORT),)
 
-# PUF entropy source: ro (default) or sram.
-# Usage: make flash PUF_TYPE=sram
+# Источник энтропии PUF: ro (по умолчанию) или sram.
+# Использование: make flash PUF_TYPE=sram
 PUF_TYPE   ?= ro
 ifeq ($(PUF_TYPE),sram)
 SDKCONFIG_DEFAULTS := sdkconfig.defaults;sdkconfig.sram.defaults
@@ -27,7 +27,7 @@ export SDKCONFIG_DEFAULTS
 
 all: firmware server
 
-# ── Firmware ──────────────────────────────────────────────────────────────────
+# ── Прошивка ──────────────────────────────────────────────────────────────────
 
 ## Build ESP32 firmware without flashing  [PUF_TYPE=ro|sram]
 firmware:
@@ -41,7 +41,7 @@ flash:
 monitor:
 	$(PYTHON) scripts/flash.py --monitor-only $(PORT_ARG)
 
-# ── Go server ─────────────────────────────────────────────────────────────────
+# ── Go-сервер ─────────────────────────────────────────────────────────────────
 
 ## Build the Go verification server binary
 server:
@@ -69,7 +69,7 @@ docker-clean:
 docker-logs:
 	docker compose logs -f server
 
-# ── Host tests ────────────────────────────────────────────────────────────────
+# ── Хост-тесты ────────────────────────────────────────────────────────────────
 
 ## Run host-side unit tests via Conan + CMake
 test:
@@ -85,7 +85,7 @@ test:
 menuconfig:
 	$(PYTHON) scripts/flash.py --menuconfig
 
-# ── Board utilities ───────────────────────────────────────────────────────────
+# ── Утилиты для платы ─────────────────────────────────────────────────────────
 
 ## Read PUF fingerprint from the connected board (stdout only)
 puf:
@@ -99,7 +99,7 @@ raw-osc:
 board-logs:
 	@$(PYTHON) scripts/get_board_logs.py $(PORT_ARG)
 
-# ── Help ──────────────────────────────────────────────────────────────────────
+# ── Справка ───────────────────────────────────────────────────────────────────
 
 help:
 	@echo ""

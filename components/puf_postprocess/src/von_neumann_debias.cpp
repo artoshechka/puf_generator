@@ -1,6 +1,6 @@
 /// @file von_neumann_debias.cpp
 /// @author Artemenko Anton
-/// @brief Implementation of the Von Neumann decorator
+/// @brief Реализация декоратора фон Неймана
 
 #include <stdexcept>
 #include <von_neumann_debias.hpp>

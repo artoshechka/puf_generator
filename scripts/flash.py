@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Setup ESP-IDF and flash puf_generator to an ESP32."""
+"""Установка ESP-IDF и прошивка puf_generator на плату ESP32."""
 
 import argparse
 import glob
@@ -7,7 +7,8 @@ import os
 import subprocess
 import sys
 
-# NOTE: IDF_PATH is captured at import time. Set it before running the script.
+# ВНИМАНИЕ: IDF_PATH считывается на этапе импорта модуля.
+# Установите переменную окружения до запуска скрипта.
 IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH", "~/esp/esp-idf"))
 IDF_TAG = os.getenv("IDF_TAG", "v5.4.1")
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,12 +17,14 @@ ESPRESSIF_DIR = os.path.expanduser("~/.espressif")
 
 
 def run(args: list[str]) -> None:
+    """Запускает внешнюю команду и завершает работу при ненулевом коде возврата."""
     result = subprocess.run(args)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
 
 def find_venv() -> str:
+    """Находит виртуальное окружение Python, установленное ESP-IDF."""
     pattern = os.path.join(ESPRESSIF_DIR, "python_env", "*/bin/python3")
     candidates = glob.glob(pattern)
     if not candidates:
@@ -30,6 +33,7 @@ def find_venv() -> str:
 
 
 def build_env(venv: str) -> dict:
+    """Формирует переменные окружения для запуска инструментов ESP-IDF."""
     env = os.environ.copy()
     env["IDF_PATH"] = IDF_PATH
     env["IDF_PYTHON_ENV_PATH"] = venv
@@ -46,6 +50,7 @@ def build_env(venv: str) -> dict:
 
 
 def idf(args: list[str]) -> None:
+    """Запускает idf.py с переданными аргументами в подготовленном окружении."""
     venv = find_venv()
     python = os.path.join(venv, "bin", "python")
     env = build_env(venv)
@@ -55,6 +60,7 @@ def idf(args: list[str]) -> None:
 
 
 def ensure_idf() -> None:
+    """Клонирует ESP-IDF и запускает установщик при их отсутствии."""
     if not os.path.isdir(IDF_PATH):
         print(f"Cloning ESP-IDF {IDF_TAG} ...")
         run([
@@ -75,6 +81,7 @@ def ensure_idf() -> None:
 
 
 def detect_port() -> str:
+    """Автоматически определяет последовательный порт подключённой платы ESP32."""
     candidates = glob.glob("/dev/cu.usbmodem*") + glob.glob("/dev/cu.SLAB_USBtoUART*")
     if not candidates:
         sys.exit("No ESP32 port found. Plug in the device or pass --port manually.")
@@ -84,6 +91,7 @@ def detect_port() -> str:
 
 
 def main() -> None:
+    """Разбирает аргументы командной строки и запускает сборку, прошивку или монитор."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="Serial port (e.g. /dev/cu.usbmodem101)")
     parser.add_argument("--build-only", action="store_true", help="Build without flashing")

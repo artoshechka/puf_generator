@@ -92,7 +92,7 @@ extern "C" void app_main()
         printFingerprint(generate());
     } catch (...)
     {
-        // Generation failure must not crash the device; boot continues without fingerprint output.
+        // Сбой генерации не должен ронять устройство; загрузка продолжается без вывода отпечатка.
     }
 
     char line[32];
@@ -116,7 +116,7 @@ extern "C" void app_main()
                     printFingerprint(generate());
                 } catch (...)
                 {
-                    // Generation failure: non-fatal.
+                    // Сбой генерации: не критично.
                 }
             } else if (strcmp(line, "LOGS") == 0)
             {
@@ -126,7 +126,7 @@ extern "C" void app_main()
                 printRawCounts();
             } else
             {
-                // Unknown command — ignore.
+                // Неизвестная команда — игнорируем.
             }
             pos = 0;
         } else if (pos < sizeof(line) - 1U)
@@ -135,7 +135,7 @@ extern "C" void app_main()
             ++pos;
         } else
         {
-            // Line too long — ignore overflow character.
+            // Строка слишком длинная — игнорируем лишний символ.
         }
     }
 }

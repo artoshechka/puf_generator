@@ -1,6 +1,6 @@
 /// @file mock_puf_generator.hpp
 /// @author Artemenko Anton
-/// @brief Test stub for IPufGenerator with predefined output
+/// @brief Тестовая заглушка для IPufGenerator с предопределённым выходом
 
 #ifndef GUID_A3F7C201_9B4E_4D83_BE12_0F6D2A8E53C9
 #define GUID_A3F7C201_9B4E_4D83_BE12_0F6D2A8E53C9
@@ -11,11 +11,11 @@
 namespace puf::test
 {
 
-/// @brief Returns a fixed fingerprint on every call to Generate()
+/// @brief Возвращает фиксированный отпечаток при каждом вызове Generate()
 class MockPufGenerator final : public IPufGenerator
 {
    public:
-    /// @param[in] fp Fingerprint returned on every call to Generate()
+    /// @param[in] fp Отпечаток, возвращаемый при каждом вызове Generate()
     explicit MockPufGenerator(Fingerprint fp) : fp_(std::move(fp))
     {
     }
@@ -31,14 +31,14 @@ class MockPufGenerator final : public IPufGenerator
     }
 
    private:
-    Fingerprint fp_;  ///< Fixed fingerprint
+    Fingerprint fp_;  ///< Фиксированный отпечаток
 };
 
-/// @brief Returns fingerprints in turn from a given sequence
+/// @brief Возвращает отпечатки по очереди из заданной последовательности
 class MockPufGeneratorSequence final : public IPufGenerator
 {
    public:
-    /// @param[in] sequence Vector of fingerprints yielded cyclically
+    /// @param[in] sequence Вектор отпечатков, выдаваемых циклически
     explicit MockPufGeneratorSequence(std::vector<Fingerprint> sequence) : sequence_(std::move(sequence)), idx_(0)
     {
     }
@@ -54,8 +54,8 @@ class MockPufGeneratorSequence final : public IPufGenerator
     }
 
    private:
-    std::vector<Fingerprint> sequence_;  ///< Cyclic sequence of fingerprints
-    size_t idx_;                         ///< Current index in sequence_
+    std::vector<Fingerprint> sequence_;  ///< Циклическая последовательность отпечатков
+    size_t idx_;                         ///< Текущий индекс в sequence_
 };
 
 }  // namespace puf::test

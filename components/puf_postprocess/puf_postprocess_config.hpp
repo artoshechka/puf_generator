@@ -1,6 +1,6 @@
 /// @file puf_postprocess_config.hpp
 /// @author Artemenko Anton
-/// @brief Configurable default values for puf_postprocess decorators
+/// @brief Настраиваемые значения по умолчанию для декораторов puf_postprocess
 
 #ifndef GUID_E7B20F41_934C_4AE1_8D67_C5102DF93BA1
 #define GUID_E7B20F41_934C_4AE1_8D67_C5102DF93BA1
@@ -10,10 +10,10 @@
 namespace puf
 {
 
-/// @brief Default number of majority voting rounds for MajorityVoter.
+/// @brief Количество раундов мажоритарного голосования по умолчанию для MajorityVoter.
 ///
-/// Must be odd for unambiguous majority. 3 rounds is the optimal balance
-/// of stability and speed for most RO PUF configurations.
+/// Должно быть нечётным для однозначного большинства. 3 раунда — оптимальный баланс
+/// стабильности и скорости для большинства конфигураций RO PUF.
 inline constexpr size_t kDefaultMajorityRounds = 3;
 
 }  // namespace puf

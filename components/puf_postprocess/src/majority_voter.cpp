@@ -1,9 +1,9 @@
 /// @file majority_voter.cpp
 /// @author Artemenko Anton
-/// @brief Implementation of majority voting
+/// @brief Реализация мажоритарного голосования
 
-#include <majority_voter.hpp>
 #include <cassert>
+#include <majority_voter.hpp>
 #include <vector>
 
 namespace puf
