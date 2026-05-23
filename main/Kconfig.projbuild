@@ -1,5 +1,17 @@
 menu "PUF Generator"
 
+    choice PUF_TYPE
+        prompt "PUF entropy source"
+        default PUF_TYPE_RO
+        help
+            Select the physical entropy source used to generate the fingerprint.
+
+        config PUF_TYPE_RO
+            bool "Ring Oscillator PUF"
+        config PUF_TYPE_SRAM
+            bool "SRAM PUF"
+    endchoice
+
     config PUF_FINGERPRINT_BITS
         int "Длина отпечатка в битах"
         default 256

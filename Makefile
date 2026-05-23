@@ -12,6 +12,16 @@ export
 PYTHON     ?= python3
 PORT_ARG    = $(if $(ESP_PORT),--port $(ESP_PORT),)
 
+# PUF entropy source: ro (default) or sram.
+# Usage: make flash PUF_TYPE=sram
+PUF_TYPE   ?= ro
+ifeq ($(PUF_TYPE),sram)
+SDKCONFIG_DEFAULTS := sdkconfig.defaults;sdkconfig.sram.defaults
+else
+SDKCONFIG_DEFAULTS := sdkconfig.defaults
+endif
+export SDKCONFIG_DEFAULTS
+
 .PHONY: all firmware flash monitor server docker-up docker-down docker-clean \
         test puf board-logs raw-osc help
 
@@ -19,11 +29,11 @@ all: firmware server
 
 # ── Firmware ──────────────────────────────────────────────────────────────────
 
-## Build ESP32 firmware without flashing
+## Build ESP32 firmware without flashing  [PUF_TYPE=ro|sram]
 firmware:
 	$(PYTHON) scripts/flash.py --build-only
 
-## Flash firmware to the board and open serial monitor
+## Flash firmware to the board and open serial monitor  [PUF_TYPE=ro|sram]
 flash:
 	$(PYTHON) scripts/flash.py $(PORT_ARG)
 

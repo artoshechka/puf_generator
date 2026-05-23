@@ -21,8 +21,10 @@ cp .env.example .env   # настроить пути и токены под св
 
 | Команда | Действие |
 |---|---|
-| `make firmware` | Собрать прошивку ESP32 |
-| `make flash` | Прошить плату и открыть монитор |
+| `make firmware` | Собрать прошивку ESP32 (RO PUF) |
+| `make firmware PUF_TYPE=sram` | Собрать прошивку со SRAM PUF |
+| `make flash` | Прошить плату и открыть монитор (RO PUF) |
+| `make flash PUF_TYPE=sram` | Прошить плату со SRAM PUF |
 | `make monitor` | Открыть монитор без перепрошивки |
 | `make menuconfig` | Открыть меню конфигурации прошивки |
 | `make server` | Собрать Go-бинарь локально |
@@ -43,8 +45,9 @@ idf.py menuconfig   # PUF Generator → длина отпечатка, окно,
 
 | Параметр | По умолчанию | Описание |
 |---|---|---|
+| `PUF_TYPE` | `ro` | Источник энтропии: `ro` (Ring Oscillator) или `sram` |
 | `PUF_FINGERPRINT_BITS` | 256 | Длина отпечатка в битах (64–496) |
-| `PUF_WINDOW_CYCLES` | 200 000 | Окно измерения в тактах CPU |
+| `PUF_WINDOW_CYCLES` | 200 000 | Окно измерения в тактах CPU (только для RO PUF) |
 | `PUF_MAJORITY_ROUNDS` | 3 | Число раундов голосования (нечётное) |
 
 ### Документация (Doxygen)

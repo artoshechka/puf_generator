@@ -1,0 +1,4 @@
+# SRAM PUF type override applied on top of sdkconfig.defaults.
+# Usage: make flash PUF_TYPE=sram
+CONFIG_PUF_TYPE_SRAM=y
+# CONFIG_PUF_TYPE_RO is not set

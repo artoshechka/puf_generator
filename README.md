@@ -1,8 +1,13 @@
 # puf_generator
 
-Аппаратный идентификатор устройства на основе Ring Oscillator PUF для ESP32.  
-Генерирует 256-битный отпечаток, уникальный для каждого экземпляра чипа,
-на основе вариаций времени выполнения программных осцилляторов в IRAM.
+Hardware device identifier based on PUF for ESP32.
+Supports two entropy sources:
+
+- **RO PUF** - pairwise comparison of software IRAM oscillator counters.
+- **SRAM PUF** - power-on state of uninitialized SRAM.
+
+Both generate a unique device fingerprint via a shared `IPufGenerator` API.
+Select the type at build time: `make flash PUF_TYPE=ro|sram`.
 
 ---
 

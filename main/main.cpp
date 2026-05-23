@@ -18,6 +18,7 @@
 #include <majority_voter.hpp>
 #include <nvs_fingerprint_storage.hpp>
 #include <puf_log.hpp>
+#include <puf_type.hpp>
 #include <ro_oscillator.hpp>
 
 namespace
@@ -39,7 +40,14 @@ void printFingerprint(const puf::Fingerprint& fp)
 puf::Fingerprint generateAndStore(puf::NvsFingerprintStorage& storage)
 {
     puf::Esp32PufFactory factory;
-    auto raw = factory.CreateRoPuf(CONFIG_PUF_FINGERPRINT_BITS);
+
+#ifdef CONFIG_PUF_TYPE_SRAM
+    constexpr puf::PufType kPufType = puf::PufType::Sram;
+#else
+    constexpr puf::PufType kPufType = puf::PufType::Ro;
+#endif
+
+    auto raw = factory.Create(kPufType, CONFIG_PUF_FINGERPRINT_BITS);
     puf::MajorityVoter generator(std::move(raw), CONFIG_PUF_MAJORITY_ROUNDS);
 
     const puf::Fingerprint fp = generator.Generate();
