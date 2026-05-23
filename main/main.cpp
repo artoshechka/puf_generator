@@ -102,7 +102,10 @@ extern "C" void app_main()
         const int c = getchar();
         if (c == EOF)
         {
-            vTaskDelay(pdMS_TO_TICKS(1));
+            // 10 мс гарантированно выдают как минимум 1 тик при default TICK_RATE=100Hz,
+            // в отличие от pdMS_TO_TICKS(1) который округляется до 0 и не даёт IDLE-задаче
+            // достаточно процессорного времени — task_wdt начинает срабатывать.
+            vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
 
