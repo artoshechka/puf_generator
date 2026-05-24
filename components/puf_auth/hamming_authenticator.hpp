@@ -35,8 +35,9 @@ class HammingAuthenticator final : public IAuthenticator
     static double FractionalHD(const Fingerprint& a, const Fingerprint& b);
 
    private:
-    Fingerprint reference_;  ///< Эталонный отпечаток, зарегистрированный при инициализации
-    double thresholdPct_;    ///< Порог принятия в процентах [0..100]
+    Fingerprint reference_;       ///< Эталонный отпечаток, зарегистрированный при инициализации
+    double thresholdPct_;         ///< Порог принятия в процентах [0..100]
+    size_t thresholdBitsCached_;  ///< floor(reference_.size()*8 * thresholdPct_/100) — для constant-time сравнения
 };
 
 }  // namespace puf
