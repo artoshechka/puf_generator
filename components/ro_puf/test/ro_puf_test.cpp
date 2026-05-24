@@ -65,3 +65,31 @@ TEST(RoPufTest, DifferentCountsProduceDifferentFingerprints)
     auto puf2 = RoPuf(MakeOscillators({100, 300, 200}), 3);
     EXPECT_NE(puf1.Generate(), puf2.Generate());
 }
+
+// Все счётчики равны → ни одна пара не даёт бита → throw.
+TEST(RoPufTest, AllEqualCountsThrowInsufficientEntropy)
+{
+    auto puf = RoPuf(MakeOscillators({100, 100, 100, 100}), 6);
+    EXPECT_THROW((void)puf.Generate(), std::runtime_error);
+}
+
+// Запрошено битов больше, чем уникальных пар → throw.
+// 3 осциллятора → C(3,2)=3 пар; просим 4 бита.
+TEST(RoPufTest, BitsBeyondAvailablePairsThrow)
+{
+    auto puf = RoPuf(MakeOscillators({100, 200, 300}), 4);
+    EXPECT_THROW((void)puf.Generate(), std::runtime_error);
+}
+
+// Равная пара пропускается без LSB-tiebreak: 3 осциллятора с одной парой
+// одинаковых даёт ровно 2 эффективные пары.
+TEST(RoPufTest, EqualPairIsSkippedNotTiebroken)
+{
+    // counts: 100, 100, 300
+    // пары: (100,100) skip, (100,300) → 0, (100,300) → 0
+    auto puf = RoPuf(MakeOscillators({100, 100, 300}), 2);
+    Fingerprint fp = puf.Generate();
+    ASSERT_GE(fp.size(), 1u);
+    // Биты 0..1 ожидаются равными 0 (counts[i]=100 < counts[j]=300).
+    EXPECT_EQ(fp[0] & 0x03, 0x00);
+}
