@@ -53,26 +53,24 @@ TEST(MajorityVoterTest, FingerprintBits)
 // VonNeumannDebias
 // ---------------------------------------------------------------------------
 
-// 0xAA = 10101010: пары (1,0),(1,0),(1,0),(1,0) — каждая даёт бит 1
-// targetBits=4: ожидаем 4 бита, равные 1 → младший полубайт = 0x0F
+// 0xAA в LSB-first порядке = биты 0,1,0,1,0,1,0,1 → пары (0,1),(0,1),(0,1),(0,1).
+// Canonical Von Neumann: (0,1) → 0. targetBits=4 → 4 нулевых бита → младший полубайт 0x00.
 TEST(VonNeumannDebiasTest, AlternatingBitsAA)
 {
-    // 0xAA даёт 4 выходных бита=1 на 1 входной байт
-    // targetBits=4 → 1 результирующий байт, биты 0..3 = 1 → 0x0F
     auto debias = VonNeumannDebias(std::make_unique<MockPufGenerator>(Fingerprint{0xAA}), 4);
     Fingerprint result = debias.Generate();
     ASSERT_EQ(result.size(), 1u);
-    EXPECT_EQ(result[0] & 0x0F, 0x0F);
+    EXPECT_EQ(result[0] & 0x0F, 0x00);
 }
 
-// 0x55 = 01010101: пары (0,1),(0,1),(0,1),(0,1) — каждая даёт бит 0
-// targetBits=4 → результат 0x00
+// 0x55 в LSB-first порядке = биты 1,0,1,0,1,0,1,0 → пары (1,0),(1,0),(1,0),(1,0).
+// Canonical Von Neumann: (1,0) → 1. targetBits=4 → 4 единичных бита → младший полубайт 0x0F.
 TEST(VonNeumannDebiasTest, AlternatingBits55)
 {
     auto debias = VonNeumannDebias(std::make_unique<MockPufGenerator>(Fingerprint{0x55}), 4);
     Fingerprint result = debias.Generate();
     ASSERT_EQ(result.size(), 1u);
-    EXPECT_EQ(result[0] & 0x0F, 0x00);
+    EXPECT_EQ(result[0] & 0x0F, 0x0F);
 }
 
 // FingerprintBits() возвращает targetBits, а не длину внутреннего генератора
@@ -83,13 +81,41 @@ TEST(VonNeumannDebiasTest, FingerprintBits)
 }
 
 // Первые 2 вызова внутреннего генератора возвращают 0x00 (все пары одинаковы → отбрасываем),
-// третий возвращает 0xAA (4 бита=1). targetBits=4 → результат непустой.
+// третий возвращает 0xAA (LSB-first: пары (0,1) → canonical → биты 0). targetBits=4 → 0x00.
 TEST(VonNeumannDebiasTest, AllSameBitsLoopsUntilUsable)
 {
     std::vector<Fingerprint> seq = {{0x00}, {0x00}, {0xAA}};
     auto debias = VonNeumannDebias(std::make_unique<MockPufGeneratorSequence>(seq), 4);
     Fingerprint result = debias.Generate();
     ASSERT_EQ(result.size(), 1u);
-    // После двух пустых вызовов третий даёт 4 бита=1
-    EXPECT_EQ(result[0] & 0x0F, 0x0F);
+    EXPECT_EQ(result[0] & 0x0F, 0x00);
+}
+
+// Источник всегда выдаёт одинаковые байты — у фон Неймана нет битовых пар (0,1)/(1,0),
+// после maxAttempts попыток (targetBits * 100) должен бросить runtime_error.
+TEST(VonNeumannDebiasTest, InsufficientEntropyThrows)
+{
+    auto debias = VonNeumannDebias(std::make_unique<MockPufGenerator>(Fingerprint{0x00}), 4);
+    EXPECT_THROW((void)debias.Generate(), std::runtime_error);
+}
+
+// Граница большинства для 5 раундов: порог `votes > rounds/2 == 2`.
+// 2 единицы из 5 не превышают порог → бит = 0.
+TEST(MajorityVoterTest, FiveRoundsExactlyHalfStaysZero)
+{
+    std::vector<Fingerprint> seq = {{0xFF}, {0xFF}, {0x00}, {0x00}, {0x00}};
+    auto voter = MajorityVoter(std::make_unique<MockPufGeneratorSequence>(seq), 5);
+    Fingerprint result = voter.Generate();
+    ASSERT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0], 0x00u);
+}
+
+// 3 единицы из 5 превышают порог → бит = 1.
+TEST(MajorityVoterTest, FiveRoundsJustOverHalfBecomesOne)
+{
+    std::vector<Fingerprint> seq = {{0xFF}, {0xFF}, {0xFF}, {0x00}, {0x00}};
+    auto voter = MajorityVoter(std::make_unique<MockPufGeneratorSequence>(seq), 5);
+    Fingerprint result = voter.Generate();
+    ASSERT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0], 0xFFu);
 }

@@ -37,6 +37,11 @@ size_t RequiredOscillators(size_t bits)
 
 std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateRoPuf(size_t bits)
 {
+    if (bits == 0U)
+    {
+        throw std::invalid_argument("bits must be > 0");
+    }
+
     const size_t oscCount = RequiredOscillators(bits);
 
     if (oscCount > RoOscillator::kMaxIndex + 1U)
@@ -62,6 +67,10 @@ std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateRoPuf(size_t bits)
 
 std::unique_ptr<IPufGenerator> Esp32PufFactory::CreateSramPuf(size_t bits)
 {
+    if (bits == 0U)
+    {
+        throw std::invalid_argument("bits must be > 0");
+    }
     if (bits > kDefaultSramPufBytes * 8U)
     {
         throw std::invalid_argument("requested bits exceed SRAM PUF buffer capacity");

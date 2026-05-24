@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <ro_oscillator.hpp>
+#include <stdexcept>
 
 namespace puf
 {
@@ -71,7 +72,9 @@ uint32_t RoOscillator::Measure(uint32_t windowCycles)
 {
     if (windowCycles > kMaxWindowCycles)
     {
-        return 0U;
+        // Прежняя реализация возвращала 0 — это давало "все счётчики равны"
+        // в RoPuf, что в паре с tiebreak'ом портило распределение.
+        throw std::out_of_range("RoOscillator: windowCycles exceeds kMaxWindowCycles");
     }
     return kOscTable[index_](windowCycles);
 }

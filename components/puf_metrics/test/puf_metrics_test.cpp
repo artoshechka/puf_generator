@@ -51,12 +51,36 @@ TEST(FractionalHD, FractionalHDMax)
     EXPECT_DOUBLE_EQ(FractionalHD(a, b), 1.0);
 }
 
-TEST(FractionalHD, FractionalHDHalf)
+TEST(FractionalHD, FractionalHDFullFlipDisjointNibbles)
 {
-    // 0x0F = 00001111, 0xF0 = 11110000 — все 8 битов различаются
+    // 0x0F = 00001111, 0xF0 = 11110000 — все 8 битов различаются → 1.0.
     Fingerprint a = {0x0F};
     Fingerprint b = {0xF0};
     EXPECT_DOUBLE_EQ(FractionalHD(a, b), 1.0);
+}
+
+TEST(FractionalHD, FractionalHDHalf)
+{
+    // 4 различающихся бита из 8 → 0.5.
+    Fingerprint a = {0x00};
+    Fingerprint b = {0x0F};
+    EXPECT_DOUBLE_EQ(FractionalHD(a, b), 0.5);
+}
+
+TEST(FractionalHD, FractionalHDEmptyThrows)
+{
+    EXPECT_THROW(FractionalHD({}, {0xAA}), std::invalid_argument);
+    EXPECT_THROW(FractionalHD({0xAA}, {}), std::invalid_argument);
+}
+
+TEST(HammingDistance, HammingDistanceLengthMismatchThrows)
+{
+    EXPECT_THROW(HammingDistance({0xAA}, {0xAA, 0xBB}), std::invalid_argument);
+}
+
+TEST(Uniformity, UniformityEmptyReturnsZero)
+{
+    EXPECT_DOUBLE_EQ(Uniformity({}), 0.0);
 }
 
 // --- IntraHD ---

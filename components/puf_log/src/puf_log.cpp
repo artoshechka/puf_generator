@@ -23,8 +23,11 @@ size_t gHead = 0;
 size_t gUsed = 0;
 SemaphoreHandle_t gMutex = nullptr;
 size_t gTruncated = 0;
+bool gInitialized = false;
 
-vprintf_like_t gOrigVprintf = nullptr;
+// Инициализирован безопасным fallback'ом (vprintf), чтобы любой вызов pufVprintf
+// между esp_log_set_vprintf() и записью реального gOrigVprintf не упал в nullptr.
+vprintf_like_t gOrigVprintf = &vprintf;
 
 void ringAppend(const char* s, size_t len)
 {
@@ -51,6 +54,14 @@ void ringAppend(const char* s, size_t len)
 
 int pufVprintf(const char* fmt, va_list args)
 {
+    // Из ISR брать FreeRTOS mutex нельзя, а printf через USB Serial/JTAG
+    // тоже небезопасен. Тихо игнорируем — лучше потерять одну строку лога
+    // чем уронить устройство.
+    if (xPortInIsrContext() != 0)
+    {
+        return 0;
+    }
+
     va_list copy;
     va_copy(copy, args);
 
@@ -69,24 +80,42 @@ int pufVprintf(const char* fmt, va_list args)
         memset(tmp, 0, sizeof(tmp));
     }
 
+    int origReturn = n;
     if (gOrigVprintf != nullptr)
     {
-        (void)gOrigVprintf(fmt, copy);
+        origReturn = gOrigVprintf(fmt, copy);
     }
 
     va_end(copy);
-    return n;
+    return origReturn;
 }
 
 }  // namespace
 
 void LogInit()
 {
+    if (gInitialized)
+    {
+        return;
+    }
+
     gMutex = xSemaphoreCreateMutex();
+    if (gMutex == nullptr)
+    {
+        // Без мьютекса безопасно использовать буфер нельзя — оставляем
+        // оригинальный esp_log путь без перехвата.
+        return;
+    }
+
     memset(gBuf, 0, sizeof(gBuf));
     gHead = 0;
     gUsed = 0;
-    gOrigVprintf = esp_log_set_vprintf(pufVprintf);
+
+    // gOrigVprintf уже инициализирован безопасным &vprintf — set активирует
+    // pufVprintf немедленно, после чего перезаписываем реальный prev.
+    vprintf_like_t prev = esp_log_set_vprintf(pufVprintf);
+    gOrigVprintf = prev;
+    gInitialized = true;
 }
 
 void LogDump()

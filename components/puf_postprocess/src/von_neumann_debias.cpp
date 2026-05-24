@@ -44,7 +44,9 @@ Fingerprint VonNeumannDebias::Generate()
                 continue;
             }
 
-            if (b1 != 0U)
+            // Canonical von Neumann: (0,1) -> 0, (1,0) -> 1.
+            // Эмитируем первый бит пары — bit value equals b0.
+            if (b0 != 0U)
             {
                 result[outIdx / 8U] |= static_cast<uint8_t>(1U << (outIdx % 8U));
             }
