@@ -7,33 +7,23 @@
 #   make docker-up         # запуск сервера верификации
 
 -include .env
-export IDF_PATH IDF_TAG ESP_PORT SDKCONFIG_DEFAULTS PUF_TYPE
+export IDF_PATH IDF_TAG ESP_PORT
 
 PYTHON     ?= python3
 PORT_ARG    = $(if $(ESP_PORT),--port $(ESP_PORT),)
 
-# Источник энтропии PUF: ro (по умолчанию) или sram.
-# Использование: make flash PUF_TYPE=sram
-PUF_TYPE   ?= ro
-ifeq ($(PUF_TYPE),sram)
-SDKCONFIG_DEFAULTS := sdkconfig.defaults;sdkconfig.sram.defaults
-else
-SDKCONFIG_DEFAULTS := sdkconfig.defaults
-endif
-export SDKCONFIG_DEFAULTS
-
 .PHONY: all firmware flash monitor server server-run docker-up docker-down docker-clean \
-	docker-logs test puf board-logs raw-osc help
+	docker-logs test puf board-logs help
 
 all: firmware server
 
 # ── Прошивка ──────────────────────────────────────────────────────────────────
 
-## Build ESP32 firmware without flashing  [PUF_TYPE=ro|sram]
+## Build ESP32 firmware without flashing
 firmware:
 	$(PYTHON) scripts/flash.py --build-only
 
-## Flash firmware to the board and open serial monitor  [PUF_TYPE=ro|sram]
+## Flash firmware to the board and open serial monitor
 flash:
 	$(PYTHON) scripts/flash.py $(PORT_ARG)
 
@@ -90,10 +80,6 @@ menuconfig:
 ## Read PUF fingerprint from the connected board (stdout only)
 puf:
 	@$(PYTHON) scripts/read_puf.py $(PORT_ARG)
-
-## Dump raw oscillator counts and analyze stability (--iterations N)
-raw-osc:
-	@$(PYTHON) scripts/analyze_raw.py $(PORT_ARG) $(if $(ITER),--iterations $(ITER),)
 
 ## Fetch accumulated log buffer from the board
 board-logs:

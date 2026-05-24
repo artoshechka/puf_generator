@@ -1,30 +1,6 @@
 # Использование (C++ API)
 
-## Выбор PUF во время выполнения
-
-```cpp
-#include <esp32_puf_factory.hpp>
-#include <puf_type.hpp>
-
-puf::Esp32PufFactory factory;
-puf::PufType type = puf::PufType::Sram; // выбор во время выполнения
-
-const auto generator = factory.Create(type, 256);
-const puf::Fingerprint fp = generator->Generate();
-// fp — это std::vector<uint8_t> длиной 32 байта (256 бит)
-```
-
-## RO PUF (явное создание)
-
-```cpp
-#include <esp32_puf_factory.hpp>
-
-puf::Esp32PufFactory factory;
-const auto generator = factory.CreateRoPuf(256);
-const puf::Fingerprint fp = generator->Generate();
-```
-
-## SRAM PUF (явное создание)
+## Базовая генерация отпечатка
 
 ```cpp
 #include <esp32_puf_factory.hpp>
@@ -32,23 +8,20 @@ const puf::Fingerprint fp = generator->Generate();
 puf::Esp32PufFactory factory;
 const auto generator = factory.CreateSramPuf(256);
 const puf::Fingerprint fp = generator->Generate();
+// fp — это std::vector<uint8_t> длиной 32 байта (256 бит)
 ```
 
 ## С пост-обработкой
 
 ```cpp
 #include <esp32_puf_factory.hpp>
-#include <majority_voter.hpp>
 #include <von_neumann_debias.hpp>
 
 puf::Esp32PufFactory factory;
-auto raw = factory.CreateRoPuf(512);
-
-// Стабилизация мажоритарным голосованием (3 раунда)
-auto stable = std::make_unique<puf::MajorityVoter>(std::move(raw), 3);
+auto raw = factory.CreateSramPuf(512);
 
 // Устранение смещения дебиасингом фон Неймана
-auto debiased = std::make_unique<puf::VonNeumannDebias>(std::move(stable), 256);
+auto debiased = std::make_unique<puf::VonNeumannDebias>(std::move(raw), 256);
 
 const puf::Fingerprint fp = debiased->Generate();
 ```
@@ -73,16 +46,15 @@ const bool ok = auth.Authenticate(fp);
 
 ## Принципы генерации отпечатка
 
-**RO PUF:**
-1. `Esp32PufFactory` создаёт N экземпляров `RoOscillator` (N*(N-1)/2 пар >= bits).
-2. `RoPuf::Generate()` измеряет каждый осциллятор в течение `windowCycles` тактов процессора.
-3. Для каждой пары `(i, j)`: `counts[i] > counts[j]` даёт бит `1`, иначе `0`.
-4. Результат — `ceil(bits/8)` байт, уникальных для каждого чипа.
-
 **SRAM PUF:**
 1. `Esp32PufFactory` размещает `s_sram_puf_buf[64]` в секции `.noinit`.
 2. `SramPuf::Generate()` копирует первые `ceil(bits/8)` байт из этого буфера.
 3. Источник энтропии — физические разбросы ячеек SRAM при подаче питания.
+
+> Энтропия захватывается **один раз при cold-boot**. После «горячих» ребутов
+> (RTS-reset, `idf.py flash` без power-cycle) содержимое `.noinit` сохраняется
+> и `Generate()` вернёт тот же отпечаток, что после последнего power-on.
+> Для повторного независимого замера нужен физический power-cycle.
 
 ## Метрики (`puf_metrics`)
 

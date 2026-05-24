@@ -17,7 +17,6 @@ else()
     include(cmake/ctest_cmake.txt)
 
     add_subdirectory(components/puf_core)
-    add_subdirectory(components/ro_puf)
     add_subdirectory(components/sram_puf)
     add_subdirectory(components/puf_postprocess)
     add_subdirectory(components/puf_metrics)

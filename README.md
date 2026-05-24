@@ -1,13 +1,8 @@
 # puf_generator
 
 Аппаратный идентификатор устройства на основе PUF для ESP32.
-Поддерживается два источника энтропии:
-
-- **RO PUF** — попарное сравнение счётчиков программных IRAM-осцилляторов.
-- **SRAM PUF** — начальное состояние неинициализированной SRAM после включения питания.
-
-Оба генерируют уникальный отпечаток устройства через общий API `IPufGenerator`.
-Тип выбирается на этапе сборки: `make flash PUF_TYPE=ro|sram`.
+Источник энтропии — **SRAM PUF**: начальное состояние неинициализированной SRAM
+после холодного старта.
 
 ---
 
@@ -30,7 +25,7 @@ brew install --cask docker   # или Colima / OrbStack
 brew install conan
 conan profile detect         # один раз создаёт ~/.conan2/profiles/default
 
-# Скрипты общения с платой (make puf, make raw-osc, make board-logs)
+# Скрипты общения с платой (make puf, make board-logs)
 python3 -m pip install pyserial
 
 # Опционально: API-документация (doxygen Doxyfile → docs/html/)
@@ -63,16 +58,11 @@ cp .env.example .env
 
 ## Основные команды
 
-Тип PUF передаётся через переменную `PUF_TYPE` (по умолчанию `ro`).
-**Не** через позиционный аргумент: `make flash sram` ошибочно — Make трактует
-`sram` как отдельный таргет.
-
 ```bash
 # Прошивка
-make flash                       # собрать и прошить с RO PUF
-make flash PUF_TYPE=sram         # собрать и прошить с SRAM PUF
-make flash PUF_TYPE=sram ESP_PORT=/dev/cu.usbmodem101
-make firmware PUF_TYPE=sram      # только сборка, без прошивки
+make flash                       # собрать и прошить
+make flash ESP_PORT=/dev/cu.usbmodem101
+make firmware                    # только сборка, без прошивки
 make monitor                     # открыть монитор без перепрошивки
 make menuconfig                  # меню конфигурации прошивки
 
@@ -86,7 +76,6 @@ make server                      # собрать локальный бинар�
 # Тесты и утилиты
 make test                        # хост-тесты C++ (нужен Conan)
 make puf                         # прочитать отпечаток с подключённой платы
-make raw-osc ITER=20             # снять сырые счётчики осцилляторов, 20 прогонов
 make board-logs                  # забрать буфер логов с платы
 make help                        # полный список таргетов
 ```
