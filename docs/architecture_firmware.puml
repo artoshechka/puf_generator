@@ -1,0 +1,74 @@
+@startuml puf_generator_firmware
+title ESP32-C3 firmware — внутренние компоненты
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Menlo
+skinparam ArrowColor #555555
+skinparam packageBackgroundColor #FAFAFA
+skinparam packageBorderColor #888888
+
+package "puf_core" as core {
+    [IPufGenerator]
+    [Fingerprint]
+}
+
+package "sram_puf" as sram {
+    [SramPuf]
+    note bottom of sram
+        читает .noinit-буфер
+        размером kDefaultSramPufBytes
+        при cold-boot
+    end note
+}
+
+package "puf_factory" as factory {
+    [IPufFactory]
+    [Esp32PufFactory]
+}
+
+package "puf_postprocess" as post {
+    [VonNeumannDebias]
+    [MajorityVoter]
+}
+
+package "puf_metrics" as metrics {
+    [puf::metrics ns]
+    note right of metrics
+        HammingDistance
+        FractionalHD
+        IntraHD / InterHD
+        Uniformity
+    end note
+}
+
+package "puf_auth" as auth {
+    [IAuthenticator]
+    [HammingAuthenticator]
+    note right of auth
+        офлайн-сравнение;
+        прод-верификация — на сервере
+    end note
+}
+
+package "puf_log" as plog {
+    [ring buffer]
+    [UART dump on LOGS]
+}
+
+package "main" as appmain {
+    [app_main]
+    [UART loop: PUF / LOGS]
+}
+
+sram ..|> core : implements IPufGenerator
+post ..|> core : implements + decorates
+factory ..> core
+factory ..> sram : creates
+auth ..> core
+metrics ..> core
+appmain --> factory : CreateSramPuf(bits)
+appmain --> plog : LogInit / LogDump
+appmain ..> sram : Generate()
+
+@enduml
