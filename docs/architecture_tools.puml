@@ -1,0 +1,50 @@
+@startuml puf_generator_tools
+title Python toolkit (scripts/) — внутренние утилиты
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Menlo
+skinparam ArrowColor #555555
+skinparam packageBackgroundColor #FAFAFA
+skinparam packageBorderColor #888888
+
+package "scripts/" as TOOLS {
+
+    package "_serial.py" as serial {
+        [open_port / read_line]
+        note right of serial
+            общий helper:
+            обнаружение ESP_PORT,
+            ожидание ответа платы
+        end note
+    }
+
+    package "flash.py" as flash {
+        [клонирование ESP-IDF]
+        [idf.py build / flash / monitor]
+        [--menuconfig]
+    }
+
+    package "read_puf.py" as readpuf {
+        [команда PUF -> stdout]
+    }
+
+    package "get_board_logs.py" as logs {
+        [команда LOGS -> stdout]
+    }
+
+    package "wipe_enrollments.py" as wipe {
+        [DELETE /devices/{id}\nдля сервера]
+    }
+}
+
+[ESP32-C3 firmware] as fw <<external>>
+[Go server] as srv <<external>>
+
+flash    --> fw     : USB / UART
+readpuf  --> serial
+logs     --> serial
+serial   --> fw     : UART
+wipe     --> srv    : HTTP DELETE\nс ADMIN_TOKEN
+
+@enduml
