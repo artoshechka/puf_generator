@@ -11,10 +11,13 @@
 """
 
 import argparse
-import glob
+import os
 import re
 import sys
 import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _serial import default_baud, detect_port  # noqa: E402
 
 _RUN_RE = re.compile(r"^RUN \d+: (.+)$")
 
@@ -22,19 +25,6 @@ _RUN_RE = re.compile(r"^RUN \d+: (.+)$")
 def eprint(*a, **kw):
     """Выводит сообщение в стандартный поток ошибок."""
     print(*a, file=sys.stderr, **kw)
-
-
-def detect_port() -> str:
-    """Автоматически определяет последовательный порт подключённой платы ESP32."""
-    candidates = (
-        glob.glob("/dev/cu.usbmodem*")
-        + glob.glob("/dev/cu.SLAB_USBtoUART*")
-        + glob.glob("/dev/ttyUSB*")
-        + glob.glob("/dev/ttyACM*")
-    )
-    if not candidates:
-        sys.exit("No ESP32 port found.")
-    return candidates[0]
 
 
 def collect(port: str, baud: int, iterations: int) -> list[list[list[int]]]:
@@ -166,7 +156,7 @@ def main():
     """Разбирает аргументы командной строки и запускает сбор и анализ данных."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", help="Serial port (auto-detected if omitted)")
-    parser.add_argument("--baud", type=int, default=115200)
+    parser.add_argument("--baud", type=int, default=default_baud())
     parser.add_argument("--iterations", type=int, default=10, help="Number of RAW commands to send (default: 10)")
     args = parser.parse_args()
 

@@ -11,12 +11,18 @@ namespace puf
 {
 
 HammingAuthenticator::HammingAuthenticator(Fingerprint reference, double thresholdPct)
-    : reference_(std::move(reference)), thresholdPct_(thresholdPct)
+    : reference_(std::move(reference)), thresholdPct_(thresholdPct), thresholdBitsCached_(0U)
 {
     if (thresholdPct < 0.0 || thresholdPct > 100.0)
     {
         throw std::invalid_argument("thresholdPct must be in [0, 100]");
     }
+    // Кэшируем целочисленный порог в битах: дальше Authenticate сравнивает
+    // популярное расстояние с константой без double-арифметики, что снимает
+    // зависимость времени от значения порога/расстояния (FP-операции на ряде
+    // ядер ESP32 проходят программно, время варьируется по операндам).
+    const size_t refBits = reference_.size() * 8U;
+    thresholdBitsCached_ = static_cast<size_t>((static_cast<double>(refBits) * thresholdPct_) / 100.0);
 }
 
 size_t HammingAuthenticator::HammingDistance(const Fingerprint& a, const Fingerprint& b)
@@ -49,12 +55,23 @@ double HammingAuthenticator::FractionalHD(const Fingerprint& a, const Fingerprin
 
 bool HammingAuthenticator::Authenticate(const Fingerprint& candidate)
 {
-    if (candidate.size() != reference_.size())
+    const size_t refSize = reference_.size();
+    // Маска несовпадения длин: 0xFF при несовпадении, 0x00 при совпадении.
+    // Подмешивается в XOR ниже, чтобы при mismatch дистанция принудительно
+    // равнялась refSize*8 — это убирает раннее ветвление по длине candidate
+    // и делает время выполнения зависящим только от refSize.
+    const uint8_t mismatchMask = (candidate.size() == refSize) ? 0x00U : 0xFFU;
+    const size_t candSize = candidate.size();
+
+    size_t dist = 0;
+    for (size_t i = 0; i < refSize; ++i)
     {
-        return false;
+        const uint8_t cv = (i < candSize) ? candidate[i] : 0x00U;
+        const uint8_t diff = static_cast<uint8_t>((reference_[i] ^ cv) | mismatchMask);
+        dist += static_cast<size_t>(std::popcount(diff));
     }
-    const double hd = FractionalHD(reference_, candidate) * 100.0;
-    return hd <= thresholdPct_;
+
+    return dist <= thresholdBitsCached_;
 }
 
 }  // namespace puf

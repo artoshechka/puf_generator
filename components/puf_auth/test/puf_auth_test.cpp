@@ -87,4 +87,33 @@ TEST(HammingAuthenticator, AuthenticateRejectsSizeMismatch)
     EXPECT_FALSE(auth.Authenticate(shorter));
 }
 
+TEST(HammingAuthenticator, AuthenticateRejectsLongerCandidate)
+{
+    Fingerprint ref = {0xAB, 0xCD};
+    HammingAuthenticator auth(ref, 50.0);
+    Fingerprint longer = {0xAB, 0xCD, 0x00};
+    // Длина не совпадает → mismatchMask поднимает дистанцию до refBits → > threshold.
+    EXPECT_FALSE(auth.Authenticate(longer));
+}
+
+TEST(HammingAuthenticator, AuthenticateThresholdBoundaryInteger)
+{
+    // 1 байт = 8 бит; threshold 12.5% → 1 бит.
+    Fingerprint ref = {0xFF};
+    HammingAuthenticator auth(ref, 12.5);
+    Fingerprint oneFlip = {0b11111110};
+    EXPECT_TRUE(auth.Authenticate(oneFlip));  // dist=1, threshold=1
+    Fingerprint twoFlips = {0b11111100};
+    EXPECT_FALSE(auth.Authenticate(twoFlips));  // dist=2, threshold=1
+}
+
+TEST(HammingAuthenticator, AuthenticateZeroThresholdRequiresExactMatch)
+{
+    Fingerprint ref = {0xAB, 0xCD};
+    HammingAuthenticator auth(ref, 0.0);
+    EXPECT_TRUE(auth.Authenticate(ref));
+    Fingerprint oneBitOff = {0xAA, 0xCD};
+    EXPECT_FALSE(auth.Authenticate(oneBitOff));
+}
+
 #endif  // GUID_C2E85A4F_71D3_4B8E_9F02_A1348DC6E507

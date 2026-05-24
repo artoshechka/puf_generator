@@ -9,7 +9,6 @@
 #include <i_puf_generator.hpp>
 #include <memory>
 #include <puf_type.hpp>
-#include <stdexcept>
 
 namespace puf
 {
@@ -32,18 +31,8 @@ class IPufFactory
     /// @param[in] type Тип источника энтропии
     /// @param[in] bits Длина отпечатка в битах
     /// @return Полностью настроенный генератор отпечатков
-    virtual std::unique_ptr<IPufGenerator> Create(PufType type, size_t bits)
-    {
-        switch (type)
-        {
-            case PufType::Ro:
-                return CreateRoPuf(bits);
-            case PufType::Sram:
-                return CreateSramPuf(bits);
-            default:
-                throw std::invalid_argument("unknown PUF type");
-        }
-    }
+    /// @throws std::invalid_argument при неизвестном типе PUF
+    virtual std::unique_ptr<IPufGenerator> Create(PufType type, size_t bits);
 };
 
 }  // namespace puf
