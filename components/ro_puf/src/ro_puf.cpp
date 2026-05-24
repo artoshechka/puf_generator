@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <ro_puf.hpp>
+#include <stdexcept>
 
 namespace puf
 {
@@ -36,15 +37,23 @@ Fingerprint RoPuf::Generate()
     {
         for (size_t j = i + 1U; j < n && bitIdx < bits_; ++j)
         {
-            if (counts[i] > counts[j])
+            // Равные счётчики пропускаем: LSB-tiebreak давал ~50% смещение
+            // на парах с совпавшими измерениями.
+            if (counts[i] == counts[j])
             {
-                fp[bitIdx / 8U] |= static_cast<uint8_t>(1U << (bitIdx % 8U));
-            } else if (counts[i] == counts[j] && ((counts[i] & 1U) != 0U))
+                continue;
+            }
+            if (counts[i] > counts[j])
             {
                 fp[bitIdx / 8U] |= static_cast<uint8_t>(1U << (bitIdx % 8U));
             }
             ++bitIdx;
         }
+    }
+
+    if (bitIdx < bits_)
+    {
+        throw std::runtime_error("RoPuf: insufficient pair entropy (too many equal counts)");
     }
 
     return fp;

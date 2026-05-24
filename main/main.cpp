@@ -6,6 +6,7 @@
 ///   LOGS  — дамп накопленных логов и очистка буфера
 ///   RAW   — вывести сырые счётчики всех 32 осцилляторов (3 прогона)
 
+#include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <sdkconfig.h>
@@ -13,6 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <esp32_puf_factory.hpp>
+#include <exception>
 #include <majority_voter.hpp>
 #include <puf_log.hpp>
 #include <puf_type.hpp>
@@ -50,12 +52,25 @@ puf::Fingerprint generate()
 #endif
 
     auto raw = factory.Create(kPufType, CONFIG_PUF_FINGERPRINT_BITS);
+
+    // MajorityVoter поверх SRAM PUF бесполезен: вход детерминирован, голоса всегда совпадают.
+    if (kPufType == puf::PufType::Sram)
+    {
+        return raw->Generate();
+    }
+
     puf::MajorityVoter generator(std::move(raw), CONFIG_PUF_MAJORITY_ROUNDS);
     return generator.Generate();
 }
 
 void printRawCounts()
 {
+#ifndef CONFIG_PUF_ALLOW_FINGERPRINT_OUTPUT
+    // Сырые счётчики осцилляторов = эквивалент отпечатка (попарные сравнения).
+    // Печатать их без явного разрешения нельзя.
+    printf("RAW_DISABLED\n");
+    (void)fflush(stdout);
+#else
     puf::RoOscillator oscs[kOscCount] = {
         puf::RoOscillator(0U),  puf::RoOscillator(1U),  puf::RoOscillator(2U),  puf::RoOscillator(3U),
         puf::RoOscillator(4U),  puf::RoOscillator(5U),  puf::RoOscillator(6U),  puf::RoOscillator(7U),
@@ -79,6 +94,7 @@ void printRawCounts()
     }
     printf("RAW_END\n");
     (void)fflush(stdout);
+#endif
 }
 
 }  // namespace
@@ -90,9 +106,9 @@ extern "C" void app_main()
     try
     {
         printFingerprint(generate());
-    } catch (...)
+    } catch (const std::exception& e)
     {
-        // Сбой генерации не должен ронять устройство; загрузка продолжается без вывода отпечатка.
+        ESP_LOGE("main", "PUF generate failed at boot: %s", e.what());
     }
 
     char line[32];
@@ -117,9 +133,9 @@ extern "C" void app_main()
                 try
                 {
                     printFingerprint(generate());
-                } catch (...)
+                } catch (const std::exception& e)
                 {
-                    // Сбой генерации: не критично.
+                    ESP_LOGE("main", "PUF generate failed: %s", e.what());
                 }
             } else if (strcmp(line, "LOGS") == 0)
             {

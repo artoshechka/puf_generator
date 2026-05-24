@@ -77,7 +77,26 @@ def ensure_idf() -> None:
 
     if not glob.glob(os.path.join(ESPRESSIF_DIR, "python_env", "*/bin/python3")):
         print("Running ESP-IDF installer ...")
-        run([os.path.join(IDF_PATH, "install.sh"), "esp32"])
+        # Firmware targets ESP32-C3 (RISC-V); installing "esp32" pulls only the
+        # Xtensa toolchain and leaves the riscv32-esp-elf compiler missing.
+        run([os.path.join(IDF_PATH, "install.sh"), "esp32c3"])
+
+
+def needs_set_target(target: str) -> bool:
+    """Возвращает True, если sdkconfig отсутствует или собран под другой target.
+
+    Без этой проверки idf.py set-target пересоздаёт sdkconfig при каждом запуске
+    и затирает локальные изменения, сделанные через menuconfig или overlay.
+    """
+    sdk_path = os.path.join(PROJECT_ROOT, "sdkconfig")
+    if not os.path.isfile(sdk_path):
+        return True
+    needle = f'CONFIG_IDF_TARGET="{target}"'
+    with open(sdk_path, encoding="utf-8") as f:
+        for line in f:
+            if line.strip() == needle:
+                return False
+    return True
 
 
 def detect_port() -> str:
@@ -104,16 +123,20 @@ def main() -> None:
     os.chdir(PROJECT_ROOT)
 
     if args.menuconfig:
+        if needs_set_target("esp32c3"):
+            idf(["set-target", "esp32c3"])
         idf(["menuconfig"])
     elif args.monitor_only:
         port = args.port or detect_port()
         idf(["-p", port, "monitor"])
     elif args.build_only:
-        idf(["set-target", "esp32c3"])
+        if needs_set_target("esp32c3"):
+            idf(["set-target", "esp32c3"])
         idf(["build"])
     else:
         port = args.port or detect_port()
-        idf(["set-target", "esp32c3"])
+        if needs_set_target("esp32c3"):
+            idf(["set-target", "esp32c3"])
         idf(["-p", port, "flash", "monitor"])
 
 

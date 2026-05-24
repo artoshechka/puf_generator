@@ -21,17 +21,14 @@ HammingAuthenticator::HammingAuthenticator(Fingerprint reference, double thresho
 
 size_t HammingAuthenticator::HammingDistance(const Fingerprint& a, const Fingerprint& b)
 {
-    size_t dist = 0;
-    const size_t maxLen = std::max(a.size(), b.size());
-    for (size_t i = 0; i < maxLen; ++i)
-    {
-        const uint8_t av = (i < a.size()) ? a[i] : 0U;
-        const uint8_t bv = (i < b.size()) ? b[i] : 0U;
-        dist += static_cast<size_t>(std::popcount(static_cast<uint8_t>(av ^ bv)));
-    }
     if (a.size() != b.size())
     {
-        return SIZE_MAX;
+        throw std::invalid_argument("HammingDistance: fingerprint length mismatch");
+    }
+    size_t dist = 0;
+    for (size_t i = 0; i < a.size(); ++i)
+    {
+        dist += static_cast<size_t>(std::popcount(static_cast<uint8_t>(a[i] ^ b[i])));
     }
     return dist;
 }

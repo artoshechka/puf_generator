@@ -9,7 +9,7 @@ else()
     add_library(puf_auth src/hamming_authenticator.cpp)
     target_include_directories(puf_auth PUBLIC .)
     target_link_libraries(puf_auth PUBLIC puf_core)
-    target_compile_features(puf_auth PUBLIC cxx_std_20)
+    target_compile_features(puf_auth PRIVATE cxx_std_20)
 
     puf_add_test(
         TARGET      puf_auth_test

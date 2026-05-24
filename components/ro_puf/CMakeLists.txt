@@ -4,6 +4,7 @@ if(ESP_PLATFORM)
         INCLUDE_DIRS "."
         REQUIRES puf_core
     )
+    target_compile_options(${COMPONENT_LIB} PRIVATE -fexceptions)
 else()
     add_library(ro_puf src/ro_puf.cpp)
     target_include_directories(ro_puf PUBLIC .)

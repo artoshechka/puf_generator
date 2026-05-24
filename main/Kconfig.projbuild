@@ -14,9 +14,12 @@ menu "PUF Generator"
 
     config PUF_ALLOW_FINGERPRINT_OUTPUT
         bool "Allow fingerprint output to UART"
-        default n
+        default y
         help
-            Если выключено, прошивка печатает только маркер успеха вместо сырых байт отпечатка.
+            Включает печать сырых байт отпечатка и команду RAW (сырые счётчики осцилляторов).
+            По умолчанию ВКЛЮЧЕНО для dev/enroll-процесса.
+            Для production отключи: прошивка будет печатать только маркер "PUF_OK",
+            команда RAW вернёт "RAW_DISABLED".
 
     config PUF_FINGERPRINT_BITS
         int "Длина отпечатка в битах"
