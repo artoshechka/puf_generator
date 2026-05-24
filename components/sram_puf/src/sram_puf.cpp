@@ -2,8 +2,8 @@
 /// @author Artemenko Anton
 /// @brief Реализация SRAM PUF
 
-#include <cassert>
 #include <sram_puf.hpp>
+#include <stdexcept>
 
 namespace puf
 {
@@ -11,8 +11,14 @@ namespace puf
 SramPuf::SramPuf(const volatile uint8_t* base, size_t byteCount, size_t bits)
     : base_(base), byteCount_(byteCount), bits_(bits)
 {
-    assert(base != nullptr);
-    assert(byteCount * 8U >= bits);
+    if (base == nullptr)
+    {
+        throw std::invalid_argument("SramPuf: base is nullptr");
+    }
+    if (byteCount * 8U < bits)
+    {
+        throw std::invalid_argument("SramPuf: byteCount*8 < bits");
+    }
 }
 
 size_t SramPuf::FingerprintBits() const
