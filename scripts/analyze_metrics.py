@@ -1,38 +1,34 @@
 #!/usr/bin/env python3
-"""Compute single-device PUF metrics from a list of cold-boot fingerprints.
+"""Collect and/or analyse single-device PUF metrics.
 
-Mirrors the four metrics implemented in components/puf_metrics
-(HammingDistance, FractionalHD, IntraHD, Uniformity) — but in Python,
-so they can be evaluated on a series of captured hex strings without
-re-running anything on the board.
+Computes the four metrics implemented in components/puf_metrics
+(HammingDistance, FractionalHD, IntraHD, Uniformity) on a series of
+cold-boot fingerprints from one device. InterHD is intentionally
+excluded — analysis is scoped to a single device.
 
-InterHD is intentionally excluded: this script analyses ONE device's
-samples. For inter-device comparisons collect fingerprints separately
-and diff them manually.
+Two input modes:
 
-Input:
-    A text file (or stdin) with one hex fingerprint per line. Empty lines
-    and lines starting with '#' are ignored. All fingerprints must have
-    the same byte length.
+  1. --collect N
+        Drives the collection loop interactively. For each of the N
+        iterations: prompts to power-cycle the board (unplug / replug),
+        sends a PUF command over serial, captures the hex response.
+        With --save PATH also writes the captured hex to a file.
 
-Typical workflow:
+  2. positional argument (file path or '-' for stdin)
+        Reads pre-captured hex fingerprints, one per line. Empty lines
+        and lines starting with '#' are ignored.
 
-    # Collect N cold-boot fingerprints (power-cycle between each read).
-    : > /tmp/puf_samples.hex
-    for i in 1 2 3 4 5; do
-        echo "==> cold-boot #$i: unplug the board, replug, press Enter"
-        read
-        make puf >> /tmp/puf_samples.hex
-    done
-
-    # Analyse.
-    python3 scripts/analyze_metrics.py /tmp/puf_samples.hex
-    python3 scripts/analyze_metrics.py /tmp/puf_samples.hex --verbose
+All fingerprints must have the same byte length.
 """
 
+from __future__ import annotations
+
 import argparse
+import os
+import re
 import statistics
 import sys
+import time
 
 
 def _popcount(byte: int) -> int:
@@ -164,6 +160,80 @@ def print_report(samples: list[bytes], verbose: bool) -> None:
             print(f"  [{i+1:>2}]  " + "  ".join(row_cells))
 
 
+_MIN_HEX_CHARS = 16
+_HEX_RE = re.compile(rf"^[0-9a-f]{{{_MIN_HEX_CHARS},}}$")
+
+
+def _eprint(*args, **kwargs) -> None:
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def _read_one_fingerprint(port: str, baud: int, timeout: float) -> str:
+    """Send PUF over serial, return the first hex line matching _HEX_RE."""
+    try:
+        import serial  # pyserial
+    except ImportError:
+        sys.exit("pyserial is required: pip install pyserial")
+
+    with serial.Serial(port, baud, timeout=1) as ser:
+        ser.reset_input_buffer()
+        ser.write(b"PUF\n")
+        ser.flush()
+
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                raw = ser.readline()
+            except Exception as e:
+                _eprint(f"  serial error: {e}, retrying ...")
+                time.sleep(0.5)
+                ser.reset_input_buffer()
+                continue
+            line = raw.decode("ascii", errors="ignore").strip()
+            if not line:
+                continue
+            if _HEX_RE.match(line):
+                return line
+            _eprint(f"  skip: {line[:80]}")
+
+    raise TimeoutError("timed out waiting for fingerprint")
+
+
+def collect_samples(n: int, port: str | None, baud: int, timeout: float, save_path: str | None) -> list[bytes]:
+    """Interactive collection of N cold-boot fingerprints."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _serial import detect_port  # noqa: WPS433
+
+    samples: list[bytes] = []
+    save_fp = open(save_path, "w", encoding="utf-8") if save_path else None
+    try:
+        for i in range(1, n + 1):
+            _eprint(f"\n[{i}/{n}] cold-boot: unplug USB, plug back in, then press Enter ...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                sys.exit("\naborted")
+
+            resolved_port = port or detect_port()
+            _eprint(f"  reading from {resolved_port} ...")
+
+            try:
+                hex_line = _read_one_fingerprint(resolved_port, baud, timeout)
+            except TimeoutError as e:
+                sys.exit(f"  {e}; check that firmware is flashed and PUF command works")
+
+            _eprint(f"  [{i}/{n}] captured {len(hex_line) * 4}-bit fingerprint")
+            if save_fp:
+                save_fp.write(hex_line + "\n")
+                save_fp.flush()
+            samples.append(parse_hex(hex_line))
+    finally:
+        if save_fp:
+            save_fp.close()
+
+    return samples
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -172,17 +242,48 @@ def main() -> None:
     parser.add_argument(
         "input",
         nargs="?",
-        default="-",
-        help="Path to file with hex fingerprints, one per line. '-' or omitted = stdin.",
+        default=None,
+        help="Path to file with hex fingerprints, one per line. '-' = stdin. Ignored with --collect.",
+    )
+    parser.add_argument(
+        "-c", "--collect",
+        type=int,
+        metavar="N",
+        help="Interactively collect N cold-boot fingerprints from the board.",
     )
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
         help="Print per-sample Uniformity and full pairwise HD matrix.",
     )
+    parser.add_argument(
+        "--save",
+        metavar="PATH",
+        help="With --collect, also write captured hex fingerprints to this file.",
+    )
+    # Lazy import: default_baud reads sdkconfig, only needed when collecting.
+    parser.add_argument("--port", help="Serial port (auto-detected if omitted, only with --collect)")
+    parser.add_argument("--baud", type=int, default=0, help="Baud rate (default from sdkconfig)")
+    parser.add_argument("--timeout", type=float, default=15.0, help="Seconds to wait per fingerprint (default 15)")
     args = parser.parse_args()
 
-    samples = load_samples(args.input)
+    if args.collect is not None:
+        if args.collect < 1:
+            sys.exit("--collect N must be >= 1")
+        if args.input is not None:
+            _eprint("warning: positional input argument ignored when --collect is set")
+
+        baud = args.baud
+        if baud == 0:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            from _serial import default_baud  # noqa: WPS433
+            baud = default_baud()
+
+        samples = collect_samples(args.collect, args.port, baud, args.timeout, args.save)
+    else:
+        samples = load_samples(args.input or "-")
+
+    print()
     print_report(samples, args.verbose)
 
 
