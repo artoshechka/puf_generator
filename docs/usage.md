@@ -26,22 +26,23 @@ auto debiased = std::make_unique<puf::VonNeumannDebias>(std::move(raw), 256);
 const puf::Fingerprint fp = debiased->Generate();
 ```
 
-## Хранение и аутентификация
+## Аутентификация
+
+Эталонный отпечаток на устройстве не хранится — регистрация и проверка
+выполняются на стороне Go-сервера (см. [server.md](server.md)). Класс
+`HammingAuthenticator` пригоден для офлайн-сравнения двух известных
+отпечатков (например, в хост-тестах или при отладке):
 
 ```cpp
-#include <nvs_fingerprint_storage.hpp>
 #include <hamming_authenticator.hpp>
 
-puf::NvsFingerprintStorage storage;
+// Порог внутриустройственного расстояния Хэмминга — 10%.
+puf::HammingAuthenticator auth(reference, 10.0);
+const bool ok = auth.Authenticate(candidate);
 
-// Регистрация (однократно при производстве)
-if (!storage.HasFingerprint()) {
-    storage.Store(fp);
-}
-
-// Аутентификация (порог внутриустройственного расстояния Хэмминга 10%)
-puf::HammingAuthenticator auth(storage.Load(), 10.0);
-const bool ok = auth.Authenticate(fp);
+// Утилитные статические методы доступны без построения аутентификатора:
+const size_t hdBits = puf::HammingAuthenticator::HammingDistance(reference, candidate);
+const double hdRel  = puf::HammingAuthenticator::FractionalHD(reference, candidate);
 ```
 
 ## Принципы генерации отпечатка
@@ -71,3 +72,5 @@ const double intra = puf::metrics::IntraHD({fp1, fp2, fp3});
 const double inter = puf::metrics::InterHD({fpDevice1, fpDevice2});
 const double uni   = puf::metrics::Uniformity(fp);
 ```
+
+> `puf_metrics` — это namespace `puf::metrics` со свободными функциями, не класс-утилита.

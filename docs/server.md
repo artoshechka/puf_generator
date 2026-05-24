@@ -42,7 +42,7 @@ PUF_THRESHOLD_PCT=8.0
 
 ### Требования
 
-- Go 1.22+
+- Go 1.25+ (см. `server/go.mod`)
 - PostgreSQL 14+
 
 ```bash
@@ -58,7 +58,8 @@ go run .
 | `DATABASE_URL` | — (обязательная) | DSN PostgreSQL |
 | `LISTEN_ADDR` | `:8080` | Адрес и порт сервера |
 | `ADMIN_TOKEN` | — (required) | Bearer-токен для админ-операций |
-| `PUF_THRESHOLD_PCT` | `10.0` | Максимальный допустимый intra-HD в процентах |
+| `PUF_THRESHOLD_PCT` | `10.0` | Максимальный допустимый intra-HD в процентах, диапазон `[0, 50]` |
+| `LOG_LEVEL` | `info` | Уровень логирования: `debug` / `info` / `warn` / `error` |
 
 ## REST API
 

@@ -1,0 +1,73 @@
+@startuml puf_generator_server
+title Go server (server/) — внутренние компоненты
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Menlo
+skinparam ArrowColor #555555
+skinparam packageBackgroundColor #FAFAFA
+skinparam packageBorderColor #888888
+
+package "server/" as SRV {
+
+    package "main.go" as srvmain {
+        [LoadConfig]
+        [Server bootstrap]
+    }
+
+    package "config.go" as cfg {
+        [ListenAddr]
+        [DatabaseURL]
+        [AdminToken]
+        [ThresholdPct\n(0..50)]
+        [LogLevel]
+    }
+
+    package "handler.go" as handler {
+        [POST /devices/{id}/enroll]
+        [POST /devices/{id}/verify]
+        [GET  /devices]
+        [DELETE /devices/{id}]
+        [GET  /metrics]
+        [GET  /health]
+    }
+
+    package "middleware.go" as mw {
+        [adminAuth\nBearer ADMIN_TOKEN]
+        [rateLimit\n2 req/s, burst 5]
+        [request logger]
+    }
+
+    package "puf.go" as pufops {
+        [parseHex]
+        [fractionalHD]
+        [maxFingerprintHexLen]
+    }
+
+    package "store.go" as store {
+        [Upsert]
+        [Get / List / Delete]
+        [Ping]
+    }
+
+    package "metrics.go" as srvmetrics {
+        [EnrollTotal]
+        [VerifyOK / VerifyFail]
+        [VerifyNotFound]
+        [AvgHamming]
+    }
+}
+
+package "PostgreSQL" as PG {
+    [devices(id, fingerprint_hex, enrolled_at)]
+}
+
+srvmain  --> cfg
+srvmain  --> handler  : routes()
+handler  --> mw       : adminAuth / rateLimit
+handler  --> pufops   : parseHex / fractionalHD
+handler  --> store    : Upsert / Get / Delete / List
+handler  --> srvmetrics
+store    --> PG       : SQL (pgx)
+
+@enduml

@@ -1,0 +1,34 @@
+@startuml puf_generator_overview
+title puf_generator — обзорная архитектура
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Menlo
+skinparam ArrowColor #555555
+skinparam packageBackgroundColor #FAFAFA
+skinparam packageBorderColor #888888
+skinparam packageFontSize 14
+
+package "ESP32-C3 firmware\n(источник энтропии)" as FW {
+    [SRAM PUF]
+    [post-processing]
+    [UART command loop]
+}
+
+package "Python toolkit\n(сбор + утилиты)" as TOOLS {
+    [flash / monitor]
+    [read_puf]
+    [board logs]
+    [wipe enrollments]
+}
+
+package "Go server + PostgreSQL\n(хранение + auth)" as SRV {
+    [REST API]
+    [HammingAuthenticator\n(порог HD)]
+    [devices table]
+}
+
+FW -[#3366cc]-> TOOLS : UART\nPUF / LOGS
+TOOLS -[#cc6633]-> SRV : HTTP\nenroll / verify
+
+@enduml
