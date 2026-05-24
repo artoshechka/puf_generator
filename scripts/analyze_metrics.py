@@ -24,6 +24,7 @@ All fingerprints must have the same byte length.
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import re
 import statistics
@@ -100,64 +101,140 @@ def load_samples(path: str) -> list[bytes]:
     return samples
 
 
-def print_report(samples: list[bytes], verbose: bool) -> None:
+def _format_hex(fp: bytes, group: int = 8) -> str:
+    h = fp.hex()
+    return " ".join(h[i:i + group] for i in range(0, len(h), group))
+
+
+def _bits_of(fp: bytes) -> list[int]:
+    out: list[int] = []
+    for byte in fp:
+        for k in range(7, -1, -1):
+            out.append((byte >> k) & 1)
+    return out
+
+
+def _bits_to_bytes(bits: list[int]) -> bytes:
+    out = bytearray(len(bits) // 8)
+    for idx, bit in enumerate(bits):
+        if bit:
+            out[idx // 8] |= 1 << (7 - (idx % 8))
+    return bytes(out)
+
+
+def bit_stability(samples: list[bytes]) -> tuple[list[int], list[float]]:
+    """Return (per-bit ones-count, per-bit p(1)) across all samples."""
+    n = len(samples)
+    bit_len = len(samples[0]) * 8
+    ones = [0] * bit_len
+    for s in samples:
+        for i, b in enumerate(_bits_of(s)):
+            ones[i] += b
+    probs = [c / n for c in ones]
+    return ones, probs
+
+
+def majority_vote(samples: list[bytes]) -> bytes:
+    """Per-bit majority. Ties (only with even N) resolve to 0."""
+    n = len(samples)
+    ones, _ = bit_stability(samples)
+    bits = [1 if c * 2 > n else 0 for c in ones]
+    return _bits_to_bytes(bits)
+
+
+def min_entropy_estimate(probs: list[float]) -> float:
+    """Lower bound on per-bit min-entropy, summed across the fingerprint.
+
+    H_min(bit i) = -log2(max(p_i, 1 - p_i)). Sum is a rough upper bound on
+    full-fingerprint min-entropy assuming independent bits; treats sampled
+    frequencies as ground truth, which is unreliable for small N.
+    """
+    total = 0.0
+    for p in probs:
+        q = max(p, 1.0 - p)
+        if q <= 0.0:
+            return float("inf")  # impossible given counts; defensive
+        total += -math.log2(q)
+    return total
+
+
+def print_report(samples: list[bytes], verbose: bool = False) -> None:
     n = len(samples)
     byte_len = len(samples[0])
     bit_len = byte_len * 8
 
-    print(f"Samples:    {n} fingerprints, {bit_len} bits ({byte_len} bytes) each")
+    print(f"Samples:        {n} fingerprints, {bit_len} bits ({byte_len} bytes) each")
+    print()
+
+    print("Captured fingerprints:")
+    for i, s in enumerate(samples, 1):
+        print(f"  [{i:>2}]  {_format_hex(s)}")
+    print()
 
     unis = [uniformity(s) for s in samples]
-    print(
-        f"Uniformity: mean={statistics.fmean(unis):.4f}  "
-        f"min={min(unis):.4f}  max={max(unis):.4f}  (ideal 0.5)"
-    )
-
-    if n >= 2:
-        mean_hd, min_hd, max_hd, pairs = intra_hd(samples)
-        print(
-            f"IntraHD:    mean={mean_hd:.4f}  min={min_hd:.4f}  max={max_hd:.4f}  "
-            f"(pairs={len(pairs)}, ideal 0.0, acceptable <0.05)"
-        )
-    else:
-        print("IntraHD:    n/a (need >= 2 samples)")
-        pairs = []
-
-    if not verbose:
-        return
-
-    print()
     print("Per-sample Uniformity:")
     for i, u in enumerate(unis, 1):
         print(f"  [{i:>2}]  {u:.4f}")
+    print(
+        f"  -> mean={statistics.fmean(unis):.4f}  "
+        f"min={min(unis):.4f}  max={max(unis):.4f}  (ideal 0.5)"
+    )
+    print()
 
     if n >= 2:
-        print()
-        print("Pairwise FractionalHD / HammingDistance (bits):")
-        header = "       " + "  ".join(f"{j:>6}" for j in range(1, n + 1))
+        mean_hd, min_hd, max_hd, pairs = intra_hd(samples)
+        print("Pairwise FractionalHD:")
+        header = "        " + "  ".join(f"{j:>6}" for j in range(1, n + 1))
         print(header)
         for i in range(n):
-            row_cells = []
+            cells = []
             for j in range(n):
                 if j <= i:
-                    row_cells.append("     -")
+                    cells.append("     -")
                 else:
-                    fhd = fractional_hd(samples[i], samples[j])
-                    row_cells.append(f"{fhd:.4f}")
-            print(f"  [{i+1:>2}]  " + "  ".join(row_cells))
-
+                    cells.append(f"{fractional_hd(samples[i], samples[j]):.4f}")
+            print(f"  [{i+1:>2}]  " + "  ".join(cells))
         print()
+
         print("Pairwise HammingDistance (bits):")
         print(header)
         for i in range(n):
-            row_cells = []
+            cells = []
             for j in range(n):
                 if j <= i:
-                    row_cells.append("     -")
+                    cells.append("     -")
                 else:
-                    hd = hamming_distance(samples[i], samples[j])
-                    row_cells.append(f"{hd:>6}")
-            print(f"  [{i+1:>2}]  " + "  ".join(row_cells))
+                    cells.append(f"{hamming_distance(samples[i], samples[j]):>6}")
+            print(f"  [{i+1:>2}]  " + "  ".join(cells))
+        print()
+
+        print(
+            f"IntraHD:        mean={mean_hd:.4f}  min={min_hd:.4f}  max={max_hd:.4f}  "
+            f"(pairs={len(pairs)}, ideal 0.0, acceptable <0.05)"
+        )
+        print()
+
+        ones, probs = bit_stability(samples)
+        stable = sum(1 for c in ones if c == 0 or c == n)
+        unstable = bit_len - stable
+        print("Bit stability across samples:")
+        print(f"  total bits:    {bit_len}")
+        print(f"  stable bits:   {stable:>4} ({stable / bit_len * 100:>5.2f}%)  always 0 or always 1")
+        print(f"  unstable bits: {unstable:>4} ({unstable / bit_len * 100:>5.2f}%)")
+        print()
+
+        hmin = min_entropy_estimate(probs)
+        suffix = "" if n >= 20 else f"  (rough, N={n}; >=20 recommended)"
+        print(f"Min-entropy:    H_inf >= {hmin:.1f} bits / {bit_len}{suffix}")
+        print()
+
+        ref = majority_vote(samples)
+        print(f"Majority-vote reference (bitwise):")
+        print(f"        {_format_hex(ref)}")
+    else:
+        print("IntraHD:        n/a (need >= 2 samples)")
+        print("Bit stability:  n/a (need >= 2 samples)")
+        print("Min-entropy:    n/a (need >= 2 samples)")
 
 
 _MIN_HEX_CHARS = 16
@@ -208,25 +285,33 @@ def collect_samples(n: int, port: str | None, baud: int, timeout: float, save_pa
     save_fp = open(save_path, "w", encoding="utf-8") if save_path else None
     try:
         for i in range(1, n + 1):
-            _eprint(f"\n[{i}/{n}] cold-boot: unplug USB, plug back in, then press Enter ...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                sys.exit("\naborted")
+            while True:
+                _eprint(f"\n[{i}/{n}] cold-boot: unplug USB, plug back in, then press Enter ...")
+                try:
+                    input()
+                except (EOFError, KeyboardInterrupt):
+                    sys.exit("\naborted")
 
-            resolved_port = port or detect_port()
-            _eprint(f"  reading from {resolved_port} ...")
+                try:
+                    resolved_port = port or detect_port()
+                except SystemExit as e:
+                    _eprint(str(e))
+                    _eprint("  port not found; try again")
+                    continue
+                _eprint(f"  reading from {resolved_port} ...")
 
-            try:
-                hex_line = _read_one_fingerprint(resolved_port, baud, timeout)
-            except TimeoutError as e:
-                sys.exit(f"  {e}; check that firmware is flashed and PUF command works")
+                try:
+                    hex_line = _read_one_fingerprint(resolved_port, baud, timeout)
+                except TimeoutError as e:
+                    _eprint(f"  {e}; try again")
+                    continue
 
-            _eprint(f"  [{i}/{n}] captured {len(hex_line) * 4}-bit fingerprint")
-            if save_fp:
-                save_fp.write(hex_line + "\n")
-                save_fp.flush()
-            samples.append(parse_hex(hex_line))
+                _eprint(f"  [{i}/{n}] captured {len(hex_line) * 4}-bit fingerprint")
+                if save_fp:
+                    save_fp.write(hex_line + "\n")
+                    save_fp.flush()
+                samples.append(parse_hex(hex_line))
+                break
     finally:
         if save_fp:
             save_fp.close()
