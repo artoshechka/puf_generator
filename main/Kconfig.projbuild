@@ -1,48 +1,19 @@
 menu "PUF Generator"
 
-    choice PUF_TYPE
-        prompt "PUF entropy source"
-        default PUF_TYPE_RO
-        help
-            Select the physical entropy source used to generate the fingerprint.
-
-        config PUF_TYPE_RO
-            bool "Ring Oscillator PUF"
-        config PUF_TYPE_SRAM
-            bool "SRAM PUF"
-    endchoice
-
     config PUF_ALLOW_FINGERPRINT_OUTPUT
         bool "Allow fingerprint output to UART"
         default y
         help
-            Включает печать сырых байт отпечатка и команду RAW (сырые счётчики осцилляторов).
+            Включает печать сырых байт отпечатка.
             По умолчанию ВКЛЮЧЕНО для dev/enroll-процесса.
-            Для production отключи: прошивка будет печатать только маркер "PUF_OK",
-            команда RAW вернёт "RAW_DISABLED".
+            Для production отключи: прошивка будет печатать только маркер "PUF_OK".
 
     config PUF_FINGERPRINT_BITS
         int "Длина отпечатка в битах"
         default 256
-        range 64 496
+        range 64 512
         help
             Длина генерируемого PUF-идентификатора.
-            Максимум 496 бит при 32 осцилляторах (32*31/2 = 496 пар).
-
-    config PUF_WINDOW_CYCLES
-        int "Окно измерения осциллятора (такты CPU)"
-        default 200000
-        range 50000 1000000
-        help
-            Число тактов процессора для одного измерения осциллятора.
-            Большее значение повышает стабильность, но увеличивает время генерации.
-
-    config PUF_MAJORITY_ROUNDS
-        int "Число раундов голосования большинством"
-        default 3
-        range 1 9
-        help
-            Нечётное число для однозначного большинства.
-            1 — без голосования. 3 или 5 — рекомендуется для повышения стабильности.
+            Ограничен размером SRAM-буфера в .noinit (kDefaultSramPufBytes * 8).
 
 endmenu

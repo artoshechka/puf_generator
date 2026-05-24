@@ -86,40 +86,22 @@ def ensure_idf() -> None:
 
 
 def needs_set_target(target: str) -> bool:
-    """Возвращает True, если sdkconfig отсутствует, собран под другой target
-    или его активный CONFIG_PUF_TYPE_* не совпадает с переменной PUF_TYPE.
+    """Возвращает True, если sdkconfig отсутствует или собран под другой target.
 
     Без проверки target idf.py set-target пересоздаёт sdkconfig при каждом запуске
-    и затирает локальные изменения, сделанные через menuconfig или overlay.
-
-    Без проверки PUF_TYPE overlay sdkconfig.sram.defaults молча игнорируется,
-    если sdkconfig уже существует — `make flash PUF_TYPE=sram` собирает RO-фабрику.
+    и затирает локальные изменения, сделанные через menuconfig.
     """
     sdk_path = os.path.join(PROJECT_ROOT, "sdkconfig")
     if not os.path.isfile(sdk_path):
         return True
 
     target_needle = f'CONFIG_IDF_TARGET="{target}"'
-    target_ok = False
-    active_puf = None
     with open(sdk_path, encoding="utf-8") as f:
         for line in f:
-            stripped = line.strip()
-            if stripped == target_needle:
-                target_ok = True
-            elif stripped == "CONFIG_PUF_TYPE_RO=y":
-                active_puf = "ro"
-            elif stripped == "CONFIG_PUF_TYPE_SRAM=y":
-                active_puf = "sram"
+            if line.strip() == target_needle:
+                return False
 
-    if not target_ok:
-        return True
-
-    requested_puf = (os.environ.get("PUF_TYPE") or "ro").lower()
-    if active_puf is not None and active_puf != requested_puf:
-        return True
-
-    return False
+    return True
 
 
 def main() -> None:
