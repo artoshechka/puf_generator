@@ -7,6 +7,9 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _serial import detect_port  # noqa: E402
+
 # ВНИМАНИЕ: IDF_PATH считывается на этапе импорта модуля.
 # Установите переменную окружения до запуска скрипта.
 IDF_PATH = os.path.expanduser(os.getenv("IDF_PATH") or "~/esp/esp-idf")
@@ -97,16 +100,6 @@ def needs_set_target(target: str) -> bool:
             if line.strip() == needle:
                 return False
     return True
-
-
-def detect_port() -> str:
-    """Автоматически определяет последовательный порт подключённой платы ESP32."""
-    candidates = glob.glob("/dev/cu.usbmodem*") + glob.glob("/dev/cu.SLAB_USBtoUART*")
-    if not candidates:
-        sys.exit("No ESP32 port found. Plug in the device or pass --port manually.")
-    if len(candidates) > 1:
-        print(f"Multiple ports found, using {candidates[0]}. Use --port to override.")
-    return candidates[0]
 
 
 def main() -> None:

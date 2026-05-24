@@ -8,9 +8,12 @@ Usage:
 """
 
 import argparse
-import glob
+import os
 import sys
 import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _serial import default_baud, detect_port  # noqa: E402
 
 _DUMP_BEGIN = "--- LOG DUMP BEGIN"
 _DUMP_END = "--- LOG DUMP END ---"
@@ -19,20 +22,6 @@ _TIMEOUT = 10.0  # секунд ожидания ответа
 
 def eprint(*args, **kwargs) -> None:
     print(*args, file=sys.stderr, **kwargs)
-
-
-def detect_port() -> str:
-    candidates = (
-        glob.glob("/dev/cu.usbmodem*")
-        + glob.glob("/dev/cu.SLAB_USBtoUART*")
-        + glob.glob("/dev/ttyUSB*")
-        + glob.glob("/dev/ttyACM*")
-    )
-    if not candidates:
-        sys.exit("No ESP32 port found. Plug in the device or use --port.")
-    if len(candidates) > 1:
-        eprint(f"Multiple ports found, using {candidates[0]}. Use --port to override.")
-    return candidates[0]
 
 
 def fetch_logs(port: str, baud: int) -> list[str]:
@@ -84,7 +73,7 @@ def fetch_logs(port: str, baud: int) -> list[str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", help="Serial port (auto-detected if omitted)")
-    parser.add_argument("--baud", type=int, default=115200, help="Baud rate (default: 115200)")
+    parser.add_argument("--baud", type=int, default=default_baud(), help="Baud rate (default from sdkconfig or 115200)")
     parser.add_argument("--out", help="Save logs to file instead of stdout")
     args = parser.parse_args()
 
@@ -94,7 +83,7 @@ def main() -> None:
     output = "\n".join(logs)
 
     if args.out:
-        with open(args.out, "w") as f:
+        with open(args.out, "w", encoding="utf-8") as f:
             f.write(output + "\n")
         eprint(f"Saved {len(logs)} lines to {args.out}")
     else:
