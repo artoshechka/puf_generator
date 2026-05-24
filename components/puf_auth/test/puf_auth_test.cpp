@@ -61,4 +61,30 @@ TEST(HammingAuthenticator, FractionalHDStatic)
     EXPECT_DOUBLE_EQ(HammingAuthenticator::FractionalHD({0xFF}, {0x00}), 1.0);
 }
 
+TEST(HammingAuthenticator, HammingDistanceMismatchThrows)
+{
+    EXPECT_THROW(HammingAuthenticator::HammingDistance({0xAA}, {0xAA, 0xBB}),
+                 std::invalid_argument);
+}
+
+TEST(HammingAuthenticator, FractionalHDMismatchThrows)
+{
+    EXPECT_THROW(HammingAuthenticator::FractionalHD({0xAA}, {0xAA, 0xBB}),
+                 std::invalid_argument);
+}
+
+TEST(HammingAuthenticator, FractionalHDEmptyThrows)
+{
+    EXPECT_THROW(HammingAuthenticator::FractionalHD({}, {0xAA}),
+                 std::invalid_argument);
+}
+
+TEST(HammingAuthenticator, AuthenticateRejectsSizeMismatch)
+{
+    Fingerprint ref = {0xAB, 0xCD};
+    HammingAuthenticator auth(ref, 10.0);
+    Fingerprint shorter = {0xAB};
+    EXPECT_FALSE(auth.Authenticate(shorter));
+}
+
 #endif  // GUID_C2E85A4F_71D3_4B8E_9F02_A1348DC6E507

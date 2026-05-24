@@ -90,3 +90,32 @@ TEST(VonNeumannDebiasTest, AllSameBitsLoopsUntilUsable)
     ASSERT_EQ(result.size(), 1u);
     EXPECT_EQ(result[0] & 0x0F, 0x00);
 }
+
+// Источник всегда выдаёт одинаковые байты — у фон Неймана нет битовых пар (0,1)/(1,0),
+// после maxAttempts попыток (targetBits * 100) должен бросить runtime_error.
+TEST(VonNeumannDebiasTest, InsufficientEntropyThrows)
+{
+    auto debias = VonNeumannDebias(std::make_unique<MockPufGenerator>(Fingerprint{0x00}), 4);
+    EXPECT_THROW((void)debias.Generate(), std::runtime_error);
+}
+
+// Граница большинства для 5 раундов: порог `votes > rounds/2 == 2`.
+// 2 единицы из 5 не превышают порог → бит = 0.
+TEST(MajorityVoterTest, FiveRoundsExactlyHalfStaysZero)
+{
+    std::vector<Fingerprint> seq = {{0xFF}, {0xFF}, {0x00}, {0x00}, {0x00}};
+    auto voter = MajorityVoter(std::make_unique<MockPufGeneratorSequence>(seq), 5);
+    Fingerprint result = voter.Generate();
+    ASSERT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0], 0x00u);
+}
+
+// 3 единицы из 5 превышают порог → бит = 1.
+TEST(MajorityVoterTest, FiveRoundsJustOverHalfBecomesOne)
+{
+    std::vector<Fingerprint> seq = {{0xFF}, {0xFF}, {0xFF}, {0x00}, {0x00}};
+    auto voter = MajorityVoter(std::make_unique<MockPufGeneratorSequence>(seq), 5);
+    Fingerprint result = voter.Generate();
+    ASSERT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0], 0xFFu);
+}
