@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 // Metrics хранит счётчики и агрегаты в памяти.
@@ -44,7 +46,7 @@ func (m *Metrics) AvgHamming() float64 {
 
 // handleMetrics отдаёт JSON-снимок всех счётчиков.
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, map[string]any{
+	writeJSON(r.Context(), w, map[string]any{
 		"enroll_total":           s.metrics.EnrollTotal.Load(),
 		"verify_ok":              s.metrics.VerifyOK.Load(),
 		"verify_fail":            s.metrics.VerifyFail.Load(),
@@ -53,7 +55,16 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleHealth отвечает 200 OK если сервер жив — используется Docker healthcheck-ом.
-func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, map[string]string{"status": "ok"})
+// handleHealth отвечает 200 OK если сервер жив и БД отвечает на ping.
+// Используется Docker healthcheck-ом.
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+	if err := s.store.Ping(ctx); err != nil {
+		logger(r.Context()).Warn("health db ping failed", "err", err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		writeJSON(r.Context(), w, map[string]string{"status": "db_unavailable"})
+		return
+	}
+	writeJSON(r.Context(), w, map[string]string{"status": "ok"})
 }

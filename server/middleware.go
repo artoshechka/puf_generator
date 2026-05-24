@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"log/slog"
@@ -8,10 +9,19 @@ import (
 	"time"
 )
 
-// responseWriter оборачивает http.ResponseWriter чтобы перехватить статус-код.
+// ctxKey — приватный тип для ключей в context.Context, чтобы избежать коллизий.
+type ctxKey int
+
+const (
+	ctxKeyReqID ctxKey = iota
+)
+
+// responseWriter оборачивает http.ResponseWriter чтобы перехватить статус-код
+// и подсчитать объём отданного тела.
 type responseWriter struct {
 	http.ResponseWriter
-	status int
+	status    int
+	bytesSent int64
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
@@ -23,7 +33,9 @@ func (rw *responseWriter) Write(p []byte) (int, error) {
 	if rw.status == 0 {
 		rw.status = http.StatusOK
 	}
-	return rw.ResponseWriter.Write(p)
+	n, err := rw.ResponseWriter.Write(p)
+	rw.bytesSent += int64(n)
+	return n, err
 }
 
 func reqID() string {
@@ -34,25 +46,46 @@ func reqID() string {
 	return hex.EncodeToString(b)
 }
 
+// reqIDFromCtx возвращает request ID из контекста или пустую строку.
+func reqIDFromCtx(ctx context.Context) string {
+	if v, ok := ctx.Value(ctxKeyReqID).(string); ok {
+		return v
+	}
+	return ""
+}
+
+// logger возвращает slog.Logger с привязанным request ID из контекста.
+// Все handler-логи должны идти через него — иначе теряется корреляция с requestLogger.
+func logger(ctx context.Context) *slog.Logger {
+	if id := reqIDFromCtx(ctx); id != "" {
+		return slog.Default().With("req_id", id)
+	}
+	return slog.Default()
+}
+
 // requestLogger — middleware, логирует каждый HTTP-запрос с request ID, методом,
-// путём, статусом и временем выполнения.
+// путём, статусом, временем выполнения и объёмами тела.
 func requestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		reqID := reqID()
+		id := reqID()
 
-		w.Header().Set("X-Request-ID", reqID)
+		w.Header().Set("X-Request-ID", id)
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
-		next.ServeHTTP(rw, r)
+		ctx := context.WithValue(r.Context(), ctxKeyReqID, id)
+		next.ServeHTTP(rw, r.WithContext(ctx))
 
 		slog.Info("request",
-			"id", reqID,
+			"req_id", id,
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", rw.status,
 			"latency_ms", time.Since(start).Milliseconds(),
 			"remote", r.RemoteAddr,
+			"user_agent", r.UserAgent(),
+			"bytes_in", r.ContentLength,
+			"bytes_out", rw.bytesSent,
 		)
 	})
 }

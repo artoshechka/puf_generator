@@ -6,3 +6,9 @@ CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 # ESP32-C3 native USB: UART0 is not connected to the USB port, so getchar()
 # silently drops all input from the host script without this setting.
 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
+# Enable C++ exception runtime. Without it the IDF stub for
+# __cxa_allocate_exception calls abort(), so the first `throw` (e.g. from
+# generate() at boot) crashes the device before any try/catch can run.
+# Components already pass -fexceptions, so this just wires up the runtime.
+CONFIG_COMPILER_CXX_EXCEPTIONS=y
