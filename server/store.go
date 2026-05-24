@@ -99,3 +99,13 @@ func (s *Store) Delete(ctx context.Context, id string) (bool, error) {
 	}
 	return tag.RowsAffected() > 0, nil
 }
+
+// Ping проверяет, что соединение с БД живо.
+func (s *Store) Ping(ctx context.Context) error {
+	return s.pool.Ping(ctx)
+}
+
+// Close освобождает пул соединений. Вызывается при остановке сервера.
+func (s *Store) Close() {
+	s.pool.Close()
+}
