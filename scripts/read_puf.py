@@ -12,10 +12,13 @@ When --count > 1, stdout contains multiple lines.
 """
 
 import argparse
-import glob
+import os
 import re
 import sys
 import time  # monotonic() для deadline
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _serial import default_baud, detect_port  # noqa: E402
 
 # Minimum fingerprint length in hex chars (64-bit = 16 chars).
 # ESP32 default is 256-bit = 64 chars.
@@ -26,20 +29,6 @@ _HEX_RE = re.compile(rf"^[0-9a-f]{{{_MIN_HEX_CHARS},}}$")
 def eprint(*args, **kwargs) -> None:
     """Print to stderr."""
     print(*args, file=sys.stderr, **kwargs)
-
-
-def detect_port() -> str:
-    candidates = (
-        glob.glob("/dev/cu.usbmodem*")
-        + glob.glob("/dev/cu.SLAB_USBtoUART*")
-        + glob.glob("/dev/ttyUSB*")
-        + glob.glob("/dev/ttyACM*")
-    )
-    if not candidates:
-        sys.exit("No ESP32 port found. Plug in the device or use --port.")
-    if len(candidates) > 1:
-        eprint(f"Multiple ports found, using {candidates[0]}. Use --port to override.")
-    return candidates[0]
 
 
 def read_fingerprint(port: str, baud: int, timeout: float, count: int) -> list[str]:
@@ -88,7 +77,7 @@ def read_fingerprint(port: str, baud: int, timeout: float, count: int) -> list[s
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", help="Serial port (auto-detected if omitted)")
-    parser.add_argument("--baud", type=int, default=115200, help="Baud rate (default: 115200)")
+    parser.add_argument("--baud", type=int, default=default_baud(), help="Baud rate (default from sdkconfig or 115200)")
     parser.add_argument("--timeout", type=float, default=15.0, help="Seconds to wait for fingerprint (default: 15)")
     parser.add_argument("--count", type=int, default=1, help="Number of fingerprints to read (default: 1)")
     args = parser.parse_args()
