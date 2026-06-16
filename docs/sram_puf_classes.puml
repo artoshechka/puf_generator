@@ -1,0 +1,96 @@
+@startuml
+title SRAM PUF — диаграмма классов (C++)
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam class {
+  BackgroundColor #F8F8F8
+  BorderColor #444444
+  ArrowColor #444444
+}
+hide empty members
+
+' --- puf_core ---
+package "puf_core" {
+  class "Fingerprint" as Fingerprint <<typedef>> {
+    using Fingerprint = std::vector<uint8_t>
+  }
+
+  interface IPufGenerator {
+    +~IPufGenerator()
+    +{abstract} Generate() : Fingerprint
+    +{abstract} FingerprintBits() const : size_t
+  }
+}
+
+' --- sram_puf ---
+package "sram_puf" {
+  class SramPuf <<final>> {
+    -base_ : const volatile uint8_t*
+    -byteCount_ : size_t
+    -bits_ : size_t
+    +SramPuf(base, byteCount, bits)
+    +Generate() : Fingerprint
+    +FingerprintBits() const : size_t
+  }
+
+  class "sram_puf_config" as SramCfg <<constants>> {
+    +kDefaultSramPufBytes : size_t = 64
+  }
+}
+
+' --- puf_postprocess (декораторы) ---
+package "puf_postprocess" {
+  class MajorityVoter <<final>> {
+    -inner_ : unique_ptr<IPufGenerator>
+    -rounds_ : size_t
+    +MajorityVoter(inner, rounds = kDefaultMajorityRounds)
+    +Generate() : Fingerprint
+    +FingerprintBits() const : size_t
+  }
+
+  class VonNeumannDebias <<final>> {
+    -inner_ : unique_ptr<IPufGenerator>
+    -targetBits_ : size_t
+    +VonNeumannDebias(inner, targetBits)
+    +Generate() : Fingerprint
+    +FingerprintBits() const : size_t
+  }
+
+  class "puf_postprocess_config" as PpCfg <<constants>> {
+    +kDefaultMajorityRounds : size_t = 3
+  }
+}
+
+' --- puf_factory ---
+package "puf_factory" {
+  interface IPufFactory {
+    +~IPufFactory()
+    +{abstract} CreateSramPuf(bits : size_t) : unique_ptr<IPufGenerator>
+  }
+
+  class Esp32PufFactory <<final>> {
+    +CreateSramPuf(bits : size_t) : unique_ptr<IPufGenerator>
+  }
+}
+
+' --- реализации интерфейса ---
+IPufGenerator <|.. SramPuf
+IPufGenerator <|.. MajorityVoter
+IPufGenerator <|.. VonNeumannDebias
+IPufFactory   <|.. Esp32PufFactory
+
+' --- декораторы оборачивают генератор ---
+MajorityVoter      o--> "1\ninner_" IPufGenerator
+VonNeumannDebias   o--> "1\ninner_" IPufGenerator
+
+' --- фабрика создаёт генераторы ---
+Esp32PufFactory ..> SramPuf : <<create>>
+Esp32PufFactory ..> SramCfg : uses
+
+' --- возвращаемый тип ---
+IPufGenerator ..> Fingerprint : returns
+SramPuf ..> SramCfg : default size
+MajorityVoter ..> PpCfg : default rounds
+
+@enduml

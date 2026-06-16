@@ -1,0 +1,52 @@
+@startuml
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam activity {
+  BackgroundColor #F8F8F8
+  BorderColor #444444
+  ArrowColor #444444
+}
+skinparam note {
+  BorderColor #444444
+  BackgroundColor #FFF9E6
+}
+
+start
+
+partition "Плата (ESP32 + SRAM)" {
+  :Отключить/включить питание;
+  :SRAM фиксирует
+  стартовое состояние;
+  :MCU стартует;
+  :Чтение SRAM;
+  :Фильтрация/выбор битов;
+  :Формирование
+  PUF-отпечатка;
+  :Передача по UART;
+}
+
+partition "Хост (ПК)" {
+  repeat
+    repeat
+      :Запросить power-cycle
+      и Enter;
+      :Поиск порта;
+      if (Порт найден?) then (да)
+        :Чтение UART;
+      else (нет)
+        :Нет порта;
+        :Повторить;
+      endif
+    repeat while (Отпечаток
+    не получен?) is (да)
+    :Сохранить отпечаток;
+  repeat while (Собрано N?) is (нет)
+
+  :Расчет метрик:
+  Uniformity, IntraHD,
+  стабильность бит,
+  min-entropy;
+}
+
+stop
+@enduml
