@@ -109,6 +109,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="Serial port (e.g. /dev/cu.usbmodem101)")
     parser.add_argument("--build-only", action="store_true", help="Build without flashing")
+    parser.add_argument("--flash-only", action="store_true", help="Build and flash without opening the serial monitor")
     parser.add_argument("--monitor-only", action="store_true", help="Open monitor without building or flashing")
     parser.add_argument("--menuconfig", action="store_true", help="Open interactive firmware configuration menu")
     args = parser.parse_args()
@@ -128,6 +129,11 @@ def main() -> None:
         if needs_set_target("esp32c3"):
             idf(["set-target", "esp32c3"])
         idf(["build"])
+    elif args.flash_only:
+        port = args.port or detect_port()
+        if needs_set_target("esp32c3"):
+            idf(["set-target", "esp32c3"])
+        idf(["-p", port, "flash"])
     else:
         port = args.port or detect_port()
         if needs_set_target("esp32c3"):

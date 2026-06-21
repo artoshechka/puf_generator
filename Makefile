@@ -27,6 +27,10 @@ firmware:
 flash:
 	$(PYTHON) scripts/flash.py $(PORT_ARG)
 
+## Flash firmware without opening the serial monitor (non-interactive)
+flash-only:
+	$(PYTHON) scripts/flash.py --flash-only $(PORT_ARG)
+
 ## Open serial monitor without reflashing
 monitor:
 	$(PYTHON) scripts/flash.py --monitor-only $(PORT_ARG)
